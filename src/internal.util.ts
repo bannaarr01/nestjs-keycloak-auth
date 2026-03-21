@@ -13,45 +13,45 @@ export { KeycloakRequestLike };
  * For single-tenant: returns the provided default config.
  */
 export const useTenantConfig = async (
-  request: KeycloakRequestLike,
-  jwt: string | undefined,
-  singleTenantConfig: ResolvedTenantConfig,
-  multiTenant: KeycloakMultiTenantService,
-  opts: KeycloakAuthConfig,
+   request: KeycloakRequestLike,
+   jwt: string | undefined,
+   singleTenantConfig: ResolvedTenantConfig,
+   multiTenant: KeycloakMultiTenantService,
+   opts: KeycloakAuthConfig,
 ): Promise<ResolvedTenantConfig> => {
-  if (opts.multiTenant && opts.multiTenant.realmResolver) {
-    const resolvedRealm = opts.multiTenant.realmResolver(request);
-    const realm =
+   if (opts.multiTenant && opts.multiTenant.realmResolver) {
+      const resolvedRealm = opts.multiTenant.realmResolver(request);
+      const realm =
       resolvedRealm instanceof Promise ? await resolvedRealm : resolvedRealm;
-    return await multiTenant.get(realm, request);
-  } else if (!opts.realm) {
-    if (!jwt) {
-      return singleTenantConfig;
-    }
-
-    try {
-      const payload = parseToken(jwt);
-      const issuerRealm = payload.iss?.split('/').pop();
-      if (issuerRealm) {
-        return await multiTenant.get(issuerRealm, request);
+      return await multiTenant.get(realm, request);
+   } else if (!opts.realm) {
+      if (!jwt) {
+         return singleTenantConfig;
       }
-    } catch {
+
+      try {
+         const payload = parseToken(jwt);
+         const issuerRealm = payload.iss?.split('/').pop();
+         if (issuerRealm) {
+            return await multiTenant.get(issuerRealm, request);
+         }
+      } catch {
       // Fall back to the default config when issuer parsing fails.
-      return singleTenantConfig;
-    }
-  }
-  return singleTenantConfig;
+         return singleTenantConfig;
+      }
+   }
+   return singleTenantConfig;
 };
 
 export const extractRequest = (
-  context: ExecutionContext,
+   context: ExecutionContext,
 ): [KeycloakRequestLike | undefined, unknown] => {
-  if (context.getType() === 'http') {
-    const httpContext = context.switchToHttp();
-    const request = httpContext.getRequest() as KeycloakRequestLike;
-    const response = httpContext.getResponse();
-    return [request, response];
-  }
+   if (context.getType() === 'http') {
+      const httpContext = context.switchToHttp();
+      const request = httpContext.getRequest() as KeycloakRequestLike;
+      const response = httpContext.getResponse();
+      return [request, response];
+   }
 
-  return [undefined, undefined];
+   return [undefined, undefined];
 };

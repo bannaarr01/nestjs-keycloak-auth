@@ -6,19 +6,19 @@ import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
 import { OidcDiscoveryService } from './services/oidc-discovery.service';
 import { TokenValidationService } from './services/token-validation.service';
 import {
-  KEYCLOAK_AUTH_OPTIONS,
-  KEYCLOAK_MULTITENANT_SERVICE,
+   KEYCLOAK_AUTH_OPTIONS,
+   KEYCLOAK_MULTITENANT_SERVICE,
 } from './constants';
 import { KeycloakAdminController } from './controllers/keycloak-admin.controller';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 import {
-  createKeycloakAuthOptionProvider,
-  keycloakProvider,
+   createKeycloakAuthOptionProvider,
+   keycloakProvider,
 } from './keycloak-auth.providers';
 import { KeycloakAuthOptionsFactory } from './interface/keycloak-auth-options-factory.interface';
 import {
-  KeycloakAuthOptions,
-  NestKeycloakConfig,
+   KeycloakAuthOptions,
+   NestKeycloakConfig,
 } from './interface/keycloak-auth-options.interface';
 import { KeycloakAuthModuleAsyncOptions } from './interface/keycloak-auth-module-async-options.interface';
 
@@ -59,102 +59,102 @@ export * from './util';
 
 @Module({})
 export class KeycloakAuthModule {
-  static logger = new Logger(KeycloakAuthModule.name);
+   static logger = new Logger(KeycloakAuthModule.name);
 
-  /**
+   /**
    * Register the `KeycloakAuth` module.
    * @param opts `keycloak.json` path in string or {@link NestKeycloakConfig} object.
    * @param config {@link NestKeycloakConfig} when using `keycloak.json` path, optional
    * @returns
    */
-  public static register(
-    opts: KeycloakAuthOptions,
-    config?: NestKeycloakConfig,
-  ): DynamicModule {
-    const keycloakConnectProviders = [
-      createKeycloakAuthOptionProvider(opts, config),
-      keycloakProvider,
-      KeycloakMultiTenantService,
-      {
-        provide: KEYCLOAK_MULTITENANT_SERVICE,
-        useClass: KeycloakMultiTenantService,
-      },
-      OidcDiscoveryService,
-      KeycloakHttpService,
-      KeycloakGrantService,
-      JwksCacheService,
-      TokenValidationService,
-    ];
-    return {
-      module: KeycloakAuthModule,
-      imports: [HttpModule],
-      controllers: [KeycloakAdminController],
-      providers: keycloakConnectProviders,
-      exports: keycloakConnectProviders,
-    };
-  }
-
-  public static registerAsync(
-    opts: KeycloakAuthModuleAsyncOptions,
-  ): DynamicModule {
-    const optsProvider = this.createAsyncProviders(opts);
-
-    return {
-      module: KeycloakAuthModule,
-      imports: [...(opts.imports || []), HttpModule],
-      controllers: [KeycloakAdminController],
-      providers: optsProvider,
-      exports: optsProvider,
-    };
-  }
-
-  private static createAsyncProviders(
-    options: KeycloakAuthModuleAsyncOptions,
-  ): Provider[] {
-    const reqProviders = [
-      this.createAsyncOptionsProvider(options),
-      keycloakProvider,
-      KeycloakMultiTenantService,
-      {
-        provide: KEYCLOAK_MULTITENANT_SERVICE,
-        useClass: KeycloakMultiTenantService,
-      },
-      OidcDiscoveryService,
-      KeycloakHttpService,
-      KeycloakGrantService,
-      JwksCacheService,
-      TokenValidationService,
-    ];
-
-    if (options.useExisting || options.useFactory) {
-      return reqProviders;
-    }
-
-    return [
-      ...reqProviders,
-      {
-        provide: options.useClass,
-        useClass: options.useClass,
-      },
-    ];
-  }
-
-  private static createAsyncOptionsProvider(
-    options: KeycloakAuthModuleAsyncOptions,
-  ): Provider {
-    if (options.useFactory) {
+   public static register(
+      opts: KeycloakAuthOptions,
+      config?: NestKeycloakConfig,
+   ): DynamicModule {
+      const keycloakConnectProviders = [
+         createKeycloakAuthOptionProvider(opts, config),
+         keycloakProvider,
+         KeycloakMultiTenantService,
+         {
+            provide: KEYCLOAK_MULTITENANT_SERVICE,
+            useClass: KeycloakMultiTenantService,
+         },
+         OidcDiscoveryService,
+         KeycloakHttpService,
+         KeycloakGrantService,
+         JwksCacheService,
+         TokenValidationService,
+      ];
       return {
-        provide: KEYCLOAK_AUTH_OPTIONS,
-        useFactory: options.useFactory,
-        inject: options.inject || [],
+         module: KeycloakAuthModule,
+         imports: [HttpModule],
+         controllers: [KeycloakAdminController],
+         providers: keycloakConnectProviders,
+         exports: keycloakConnectProviders,
       };
-    }
+   }
 
-    return {
-      provide: KEYCLOAK_AUTH_OPTIONS,
-      useFactory: async (optionsFactory: KeycloakAuthOptionsFactory) =>
-        await optionsFactory.createKeycloakAuthOptions(),
-      inject: [options.useExisting || options.useClass],
-    };
-  }
+   public static registerAsync(
+      opts: KeycloakAuthModuleAsyncOptions,
+   ): DynamicModule {
+      const optsProvider = this.createAsyncProviders(opts);
+
+      return {
+         module: KeycloakAuthModule,
+         imports: [...(opts.imports || []), HttpModule],
+         controllers: [KeycloakAdminController],
+         providers: optsProvider,
+         exports: optsProvider,
+      };
+   }
+
+   private static createAsyncProviders(
+      options: KeycloakAuthModuleAsyncOptions,
+   ): Provider[] {
+      const reqProviders = [
+         this.createAsyncOptionsProvider(options),
+         keycloakProvider,
+         KeycloakMultiTenantService,
+         {
+            provide: KEYCLOAK_MULTITENANT_SERVICE,
+            useClass: KeycloakMultiTenantService,
+         },
+         OidcDiscoveryService,
+         KeycloakHttpService,
+         KeycloakGrantService,
+         JwksCacheService,
+         TokenValidationService,
+      ];
+
+      if (options.useExisting || options.useFactory) {
+         return reqProviders;
+      }
+
+      return [
+         ...reqProviders,
+         {
+            provide: options.useClass,
+            useClass: options.useClass,
+         },
+      ];
+   }
+
+   private static createAsyncOptionsProvider(
+      options: KeycloakAuthModuleAsyncOptions,
+   ): Provider {
+      if (options.useFactory) {
+         return {
+            provide: KEYCLOAK_AUTH_OPTIONS,
+            useFactory: options.useFactory,
+            inject: options.inject || [],
+         };
+      }
+
+      return {
+         provide: KEYCLOAK_AUTH_OPTIONS,
+         useFactory: async (optionsFactory: KeycloakAuthOptionsFactory) =>
+            await optionsFactory.createKeycloakAuthOptions(),
+         inject: [options.useExisting || options.useClass],
+      };
+   }
 }

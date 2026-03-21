@@ -1,9 +1,9 @@
 import { extractRequest } from '../internal.util';
 import { ConditionalScopeFn } from '../types/conditional-scope.type';
 import {
-  createParamDecorator,
-  ExecutionContext,
-  SetMetadata,
+   createParamDecorator,
+   ExecutionContext,
+   SetMetadata,
 } from '@nestjs/common';
 
 export { ConditionalScopeFn };
@@ -23,15 +23,15 @@ export const Scopes = (...scopes: string[]) => SetMetadata(META_SCOPES, scopes);
  * @param scopes - scopes that are associated with the resource depending on the conditions
  */
 export const ConditionalScopes = (resolver: ConditionalScopeFn) =>
-  SetMetadata(META_CONDITIONAL_SCOPES, resolver);
+   SetMetadata(META_CONDITIONAL_SCOPES, resolver);
 
 /**
  * Retrieves the resolved scopes.
  * @since 1.5.0
  */
 export const ResolvedScopes = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const [req] = extractRequest(ctx);
-    return req.scopes;
-  },
+   (data: unknown, ctx: ExecutionContext) => {
+      const [req] = extractRequest(ctx);
+      return req.scopes;
+   },
 );

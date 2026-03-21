@@ -6,8 +6,8 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
  * @since 1.5.0
  */
 export const KeycloakUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const [req] = extractRequest(ctx);
-    return req.user;
-  },
+   (data: unknown, ctx: ExecutionContext) => {
+      const [req] = extractRequest(ctx);
+      return req.user;
+   },
 );

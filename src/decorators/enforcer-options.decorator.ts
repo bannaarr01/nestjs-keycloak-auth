@@ -9,4 +9,4 @@ export const META_ENFORCER_OPTIONS = 'enforcer-options';
  * @since 1.3.0
  */
 export const EnforcerOptions = (opts: KeycloakEnforcerOptions) =>
-  SetMetadata(META_ENFORCER_OPTIONS, opts);
+   SetMetadata(META_ENFORCER_OPTIONS, opts);

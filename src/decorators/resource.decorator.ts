@@ -7,4 +7,4 @@ export const META_RESOURCE = 'resource';
  * @param resource - name of resource
  */
 export const Resource = (resource: string) =>
-  SetMetadata(META_RESOURCE, resource);
+   SetMetadata(META_RESOURCE, resource);
