@@ -29,8 +29,8 @@ UMA-based resource authorization. Endpoints are resolved via OIDC discovery
 
 ```
 src/
-  keycloak-connect.module.ts      # Dynamic module registration
-  keycloak-connect.providers.ts   # Config parsing + ResolvedTenantConfig providers
+  keycloak-auth.module.ts      # Dynamic module registration
+  keycloak-auth.providers.ts   # Config parsing + ResolvedTenantConfig providers
   internal.util.ts                # Request extraction + tenant resolution helpers
   constants.ts                    # Injection tokens + enums
   util.ts                         # JWT payload parsing utility
@@ -127,7 +127,7 @@ npm run release
 
 ## Key Files
 
-- Module entry: `src/keycloak-connect.module.ts`
+- Module entry: `src/keycloak-auth.module.ts`
 - Public API: `src/index.ts`
 - Auth guard: `src/guards/auth.guard.ts`
 - Resource guard: `src/guards/resource.guard.ts`

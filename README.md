@@ -48,7 +48,7 @@ npm install nestjs-keycloak-auth --save
 Registering the module:
 
 ```typescript
-KeycloakConnectModule.register({
+KeycloakAuthModule.register({
   authServerUrl: 'http://localhost:8080', // might be http://localhost:8080/auth for older keycloak versions
   realm: 'master',
   clientId: 'my-nestjs-app',
@@ -62,7 +62,7 @@ KeycloakConnectModule.register({
 Async registration is also available:
 
 ```typescript
-KeycloakConnectModule.registerAsync({
+KeycloakAuthModule.registerAsync({
   useExisting: KeycloakConfigService,
   imports: [ConfigModule],
 });
@@ -73,15 +73,15 @@ KeycloakConnectModule.registerAsync({
 ```typescript
 import { Injectable } from '@nestjs/common';
 import {
-  KeycloakConnectOptions,
-  KeycloakConnectOptionsFactory,
+  KeycloakAuthOptions,
+  KeycloakAuthOptionsFactory,
   PolicyEnforcementMode,
   TokenValidation,
 } from 'nestjs-keycloak-auth';
 
 @Injectable()
-export class KeycloakConfigService implements KeycloakConnectOptionsFactory {
-  createKeycloakConnectOptions(): KeycloakConnectOptions {
+export class KeycloakConfigService implements KeycloakAuthOptionsFactory {
+  createKeycloakAuthOptions(): KeycloakAuthOptions {
     return {
       // http://localhost:8080/auth for older keycloak versions
       authServerUrl: 'http://localhost:8080',
@@ -99,7 +99,7 @@ export class KeycloakConfigService implements KeycloakConnectOptionsFactory {
 You can also register by just providing the `keycloak.json` path and an optional module configuration:
 
 ```typescript
-KeycloakConnectModule.register(`./keycloak.json`, {
+KeycloakAuthModule.register(`./keycloak.json`, {
   policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
   tokenValidation: TokenValidation.ONLINE,
 });

@@ -1,9 +1,9 @@
 import { KeycloakGrant } from '../token/keycloak-grant';
 import { KeycloakToken } from '../token/keycloak-token';
-import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
+import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { TokenValidationService } from './token-validation.service';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 
 /**
  * Service for creating and validating Keycloak grants.
@@ -15,8 +15,8 @@ export class KeycloakGrantService {
   private readonly clientId: string;
 
   constructor(
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private readonly keycloakOpts: KeycloakConnectConfig,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private readonly keycloakOpts: KeycloakAuthConfig,
     private readonly tokenValidation: TokenValidationService,
   ) {
     this.clientId =

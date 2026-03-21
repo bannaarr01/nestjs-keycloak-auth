@@ -1,6 +1,6 @@
 import {
   KEYCLOAK_INSTANCE,
-  KEYCLOAK_CONNECT_OPTIONS,
+  KEYCLOAK_AUTH_OPTIONS,
   KEYCLOAK_MULTITENANT_SERVICE,
 } from '../constants';
 import * as crypto from 'crypto';
@@ -9,7 +9,7 @@ import { JwksCacheService } from '../services/jwks-cache.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { TokenValidationService } from '../services/token-validation.service';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import {
   Body,
   Controller,
@@ -50,8 +50,8 @@ export class KeycloakAdminController {
   constructor(
     @Inject(KEYCLOAK_INSTANCE)
     private readonly tenantConfig: ResolvedTenantConfig,
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private readonly keycloakOpts: KeycloakConnectConfig,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private readonly keycloakOpts: KeycloakAuthConfig,
     @Inject(KEYCLOAK_MULTITENANT_SERVICE)
     private readonly multiTenant: KeycloakMultiTenantService,
     private readonly tokenValidation: TokenValidationService,

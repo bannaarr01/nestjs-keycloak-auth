@@ -6,21 +6,21 @@ import { KeycloakGrantService } from './services/keycloak-grant.service';
 import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
 import { TokenValidationService } from './services/token-validation.service';
 import {
-  KEYCLOAK_CONNECT_OPTIONS,
+  KEYCLOAK_AUTH_OPTIONS,
   KEYCLOAK_MULTITENANT_SERVICE,
 } from './constants';
 import { KeycloakAdminController } from './controllers/keycloak-admin.controller';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 import {
-  createKeycloakConnectOptionProvider,
+  createKeycloakAuthOptionProvider,
   keycloakProvider,
-} from './keycloak-connect.providers';
-import { KeycloakConnectOptionsFactory } from './interface/keycloak-connect-options-factory.interface';
+} from './keycloak-auth.providers';
+import { KeycloakAuthOptionsFactory } from './interface/keycloak-auth-options-factory.interface';
 import {
-  KeycloakConnectOptions,
+  KeycloakAuthOptions,
   NestKeycloakConfig,
-} from './interface/keycloak-connect-options.interface';
-import { KeycloakConnectModuleAsyncOptions } from './interface/keycloak-connect-module-async-options.interface';
+} from './interface/keycloak-auth-options.interface';
+import { KeycloakAuthModuleAsyncOptions } from './interface/keycloak-auth-module-async-options.interface';
 
 export * from './constants';
 export * from './decorators/access-token.decorator';
@@ -33,9 +33,9 @@ export * from './decorators/scopes.decorator';
 export * from './guards/auth.guard';
 export * from './guards/resource.guard';
 export * from './guards/role.guard';
-export * from './interface/keycloak-connect-module-async-options.interface';
-export * from './interface/keycloak-connect-options-factory.interface';
-export * from './interface/keycloak-connect-options.interface';
+export * from './interface/keycloak-auth-module-async-options.interface';
+export * from './interface/keycloak-auth-options-factory.interface';
+export * from './interface/keycloak-auth-options.interface';
 export * from './interface/tenant-config.interface';
 export * from './interface/enforcer-options.interface';
 export * from './interface/jwks.interface';
@@ -53,21 +53,21 @@ export * from './token/keycloak-grant';
 export * from './util';
 
 @Module({})
-export class KeycloakConnectModule {
-  static logger = new Logger(KeycloakConnectModule.name);
+export class KeycloakAuthModule {
+  static logger = new Logger(KeycloakAuthModule.name);
 
   /**
-   * Register the `KeycloakConnect` module.
+   * Register the `KeycloakAuth` module.
    * @param opts `keycloak.json` path in string or {@link NestKeycloakConfig} object.
    * @param config {@link NestKeycloakConfig} when using `keycloak.json` path, optional
    * @returns
    */
   public static register(
-    opts: KeycloakConnectOptions,
+    opts: KeycloakAuthOptions,
     config?: NestKeycloakConfig,
   ): DynamicModule {
     const keycloakConnectProviders = [
-      createKeycloakConnectOptionProvider(opts, config),
+      createKeycloakAuthOptionProvider(opts, config),
       keycloakProvider,
       KeycloakMultiTenantService,
       {
@@ -81,7 +81,7 @@ export class KeycloakConnectModule {
       TokenValidationService,
     ];
     return {
-      module: KeycloakConnectModule,
+      module: KeycloakAuthModule,
       imports: [HttpModule],
       controllers: [KeycloakAdminController],
       providers: keycloakConnectProviders,
@@ -90,12 +90,12 @@ export class KeycloakConnectModule {
   }
 
   public static registerAsync(
-    opts: KeycloakConnectModuleAsyncOptions,
+    opts: KeycloakAuthModuleAsyncOptions,
   ): DynamicModule {
     const optsProvider = this.createAsyncProviders(opts);
 
     return {
-      module: KeycloakConnectModule,
+      module: KeycloakAuthModule,
       imports: [...(opts.imports || []), HttpModule],
       controllers: [KeycloakAdminController],
       providers: optsProvider,
@@ -104,7 +104,7 @@ export class KeycloakConnectModule {
   }
 
   private static createAsyncProviders(
-    options: KeycloakConnectModuleAsyncOptions,
+    options: KeycloakAuthModuleAsyncOptions,
   ): Provider[] {
     const reqProviders = [
       this.createAsyncOptionsProvider(options),
@@ -135,20 +135,20 @@ export class KeycloakConnectModule {
   }
 
   private static createAsyncOptionsProvider(
-    options: KeycloakConnectModuleAsyncOptions,
+    options: KeycloakAuthModuleAsyncOptions,
   ): Provider {
     if (options.useFactory) {
       return {
-        provide: KEYCLOAK_CONNECT_OPTIONS,
+        provide: KEYCLOAK_AUTH_OPTIONS,
         useFactory: options.useFactory,
         inject: options.inject || [],
       };
     }
 
     return {
-      provide: KEYCLOAK_CONNECT_OPTIONS,
-      useFactory: async (optionsFactory: KeycloakConnectOptionsFactory) =>
-        await optionsFactory.createKeycloakConnectOptions(),
+      provide: KEYCLOAK_AUTH_OPTIONS,
+      useFactory: async (optionsFactory: KeycloakAuthOptionsFactory) =>
+        await optionsFactory.createKeycloakAuthOptions(),
       inject: [options.useExisting || options.useClass],
     };
   }

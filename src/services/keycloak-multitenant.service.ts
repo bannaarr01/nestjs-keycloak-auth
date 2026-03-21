@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
+import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
-import { KeycloakConnectOptions } from '../interface/keycloak-connect-options.interface';
+import { KeycloakAuthOptions } from '../interface/keycloak-auth-options.interface';
 
 /**
  * Stores resolved tenant configurations for multi-tenant scenarios.
@@ -11,8 +11,8 @@ export class KeycloakMultiTenantService {
   private configs: Map<string, ResolvedTenantConfig> = new Map();
 
   constructor(
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private keycloakOpts: KeycloakConnectOptions,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private keycloakOpts: KeycloakAuthOptions,
   ) {}
 
   /**

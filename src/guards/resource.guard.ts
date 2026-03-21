@@ -9,7 +9,7 @@ import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
 import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import {
   CanActivate,
   ExecutionContext,
@@ -23,7 +23,7 @@ import {
   META_SCOPES,
 } from '../decorators/scopes.decorator';
 import {
-  KEYCLOAK_CONNECT_OPTIONS,
+  KEYCLOAK_AUTH_OPTIONS,
   KEYCLOAK_INSTANCE,
   KEYCLOAK_MULTITENANT_SERVICE,
   PolicyEnforcementMode,
@@ -42,8 +42,8 @@ export class ResourceGuard implements CanActivate {
   constructor(
     @Inject(KEYCLOAK_INSTANCE)
     private singleTenant: ResolvedTenantConfig,
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private keycloakOpts: KeycloakConnectConfig,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private keycloakOpts: KeycloakAuthConfig,
     @Inject(KEYCLOAK_MULTITENANT_SERVICE)
     private multiTenant: KeycloakMultiTenantService,
     private keycloakHttp: KeycloakHttpService,

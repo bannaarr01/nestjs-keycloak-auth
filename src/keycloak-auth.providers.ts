@@ -1,18 +1,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Provider } from '@nestjs/common';
-import { KeycloakConnectModule } from './keycloak-connect.module';
+import { KeycloakAuthModule } from './keycloak-auth.module';
 import { ResolvedTenantConfig } from './interface/tenant-config.interface';
 import {
-  KEYCLOAK_CONNECT_OPTIONS,
+  KEYCLOAK_AUTH_OPTIONS,
   KEYCLOAK_INSTANCE,
   TokenValidation,
 } from './constants';
 import {
-  KeycloakConnectConfig,
-  KeycloakConnectOptions,
+  KeycloakAuthConfig,
+  KeycloakAuthOptions,
   NestKeycloakConfig,
-} from './interface/keycloak-connect-options.interface';
+} from './interface/keycloak-auth-options.interface';
 
 /**
  * Resolve environment variable references in config values.
@@ -38,9 +38,9 @@ function resolveValue(value: unknown): unknown {
 }
 
 /**
- * Resolves a KeycloakConnectConfig into a ResolvedTenantConfig.
+ * Resolves a KeycloakAuthConfig into a ResolvedTenantConfig.
  */
-const resolveConfig = (opts: KeycloakConnectConfig): ResolvedTenantConfig => {
+const resolveConfig = (opts: KeycloakAuthConfig): ResolvedTenantConfig => {
   const authServerUrl = (
     resolveValue(
       opts.authServerUrl ||
@@ -82,7 +82,7 @@ const resolveConfig = (opts: KeycloakConnectConfig): ResolvedTenantConfig => {
 
 export const keycloakProvider: Provider = {
   provide: KEYCLOAK_INSTANCE,
-  useFactory: (opts: KeycloakConnectOptions): ResolvedTenantConfig => {
+  useFactory: (opts: KeycloakAuthOptions): ResolvedTenantConfig => {
     if (typeof opts === 'string') {
       throw new Error(
         'Keycloak configuration should have been parsed by this point.',
@@ -91,20 +91,20 @@ export const keycloakProvider: Provider = {
 
     // Warn if using token validation none
     if (opts.tokenValidation && opts.tokenValidation === TokenValidation.NONE) {
-      KeycloakConnectModule.logger.warn(
+      KeycloakAuthModule.logger.warn(
         'Token validation is disabled, please only do this on development/special use-cases.',
       );
     }
 
     return resolveConfig(opts);
   },
-  inject: [KEYCLOAK_CONNECT_OPTIONS],
+  inject: [KEYCLOAK_AUTH_OPTIONS],
 };
 
 const parseConfig = (
-  opts: KeycloakConnectOptions,
+  opts: KeycloakAuthOptions,
   config?: NestKeycloakConfig,
-): KeycloakConnectConfig => {
+): KeycloakAuthConfig => {
   if (typeof opts === 'string') {
     const configPathRelative = path.join(__dirname, opts);
     const configPathRoot = path.join(process.cwd(), opts);
@@ -128,12 +128,12 @@ const parseConfig = (
   return opts;
 };
 
-export const createKeycloakConnectOptionProvider = (
-  opts: KeycloakConnectOptions,
+export const createKeycloakAuthOptionProvider = (
+  opts: KeycloakAuthOptions,
   config?: NestKeycloakConfig,
 ) => {
   return {
-    provide: KEYCLOAK_CONNECT_OPTIONS,
+    provide: KEYCLOAK_AUTH_OPTIONS,
     useValue: parseConfig(opts, config),
   };
 };

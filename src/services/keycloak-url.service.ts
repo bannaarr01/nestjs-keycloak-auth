@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
+import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 
 /**
  * Service for generating Keycloak endpoint URLs.
@@ -8,8 +8,8 @@ import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.int
 @Injectable()
 export class KeycloakUrlService {
   constructor(
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private readonly keycloakOpts: KeycloakConnectConfig,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private readonly keycloakOpts: KeycloakAuthConfig,
   ) {}
 
   /**

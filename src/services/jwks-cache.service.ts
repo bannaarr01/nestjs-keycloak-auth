@@ -1,9 +1,9 @@
 import * as crypto from 'crypto';
-import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
+import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { KeycloakHttpService } from './keycloak-http.service';
 import { CachedJwks, JwksKey } from '../interface/jwks.interface';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 
 @Injectable()
 export class JwksCacheService {
@@ -12,8 +12,8 @@ export class JwksCacheService {
   private minTimeBetweenRequestsMs: number;
 
   constructor(
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    keycloakOpts: KeycloakConnectConfig,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    keycloakOpts: KeycloakAuthConfig,
     private readonly keycloakHttp: KeycloakHttpService,
   ) {
     // Wire minTimeBetweenJwksRequests from config.

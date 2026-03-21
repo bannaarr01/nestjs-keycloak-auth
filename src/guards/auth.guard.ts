@@ -6,7 +6,7 @@ import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { extractRequest, useTenantConfig } from '../internal.util';
 import { TokenValidationService } from '../services/token-validation.service';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import {
   CanActivate,
   ExecutionContext,
@@ -16,7 +16,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import {
-  KEYCLOAK_CONNECT_OPTIONS,
+  KEYCLOAK_AUTH_OPTIONS,
   KEYCLOAK_INSTANCE,
   KEYCLOAK_MULTITENANT_SERVICE,
   TokenValidation,
@@ -34,8 +34,8 @@ export class AuthGuard implements CanActivate {
   constructor(
     @Inject(KEYCLOAK_INSTANCE)
     private singleTenant: ResolvedTenantConfig,
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private keycloakOpts: KeycloakConnectConfig,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private keycloakOpts: KeycloakAuthConfig,
     @Inject(KEYCLOAK_MULTITENANT_SERVICE)
     private multiTenant: KeycloakMultiTenantService,
     private tokenValidation: TokenValidationService,

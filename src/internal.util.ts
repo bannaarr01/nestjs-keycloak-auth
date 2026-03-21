@@ -1,7 +1,7 @@
 import { parseToken } from './util';
 import { ExecutionContext } from '@nestjs/common';
 import { ResolvedTenantConfig } from './interface/tenant-config.interface';
-import { KeycloakConnectConfig } from './interface/keycloak-connect-options.interface';
+import { KeycloakAuthConfig } from './interface/keycloak-auth-options.interface';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 
 export interface KeycloakRequestLike {
@@ -23,7 +23,7 @@ export const useTenantConfig = async (
   jwt: string | undefined,
   singleTenantConfig: ResolvedTenantConfig,
   multiTenant: KeycloakMultiTenantService,
-  opts: KeycloakConnectConfig,
+  opts: KeycloakAuthConfig,
 ): Promise<ResolvedTenantConfig> => {
   if (opts.multiTenant && opts.multiTenant.realmResolver) {
     const resolvedRealm = opts.multiTenant.realmResolver(request);

@@ -7,7 +7,7 @@ import {
   META_ROLES,
 } from '../decorators/roles.decorator';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import {
   CanActivate,
   ExecutionContext,
@@ -16,7 +16,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import {
-  KEYCLOAK_CONNECT_OPTIONS,
+  KEYCLOAK_AUTH_OPTIONS,
   KEYCLOAK_INSTANCE,
   KEYCLOAK_MULTITENANT_SERVICE,
   RoleMatch,
@@ -35,8 +35,8 @@ export class RoleGuard implements CanActivate {
   constructor(
     @Inject(KEYCLOAK_INSTANCE)
     private singleTenant: ResolvedTenantConfig,
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private keycloakOpts: KeycloakConnectConfig,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private keycloakOpts: KeycloakAuthConfig,
     @Inject(KEYCLOAK_MULTITENANT_SERVICE)
     private multiTenant: KeycloakMultiTenantService,
   ) {}

@@ -1,7 +1,7 @@
 /**
  * Used internally, provides keycloak options for the Nest guards.
  */
-export const KEYCLOAK_CONNECT_OPTIONS = 'KEYCLOAK_CONNECT_OPTIONS';
+export const KEYCLOAK_AUTH_OPTIONS = 'KEYCLOAK_AUTH_OPTIONS';
 
 /**
  * Key for injecting a keycloak instance.

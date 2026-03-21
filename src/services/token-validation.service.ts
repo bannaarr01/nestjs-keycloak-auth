@@ -1,10 +1,10 @@
 import * as crypto from 'crypto';
 import { JwksCacheService } from './jwks-cache.service';
 import { KeycloakToken } from '../token/keycloak-token';
-import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
+import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
 import { KeycloakHttpService } from './keycloak-http.service';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 
 @Injectable()
 export class TokenValidationService {
@@ -14,8 +14,8 @@ export class TokenValidationService {
   private readonly notBeforeByRealm = new Map<string, number>();
 
   constructor(
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private readonly keycloakOpts: KeycloakConnectConfig,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private readonly keycloakOpts: KeycloakAuthConfig,
     private readonly keycloakHttp: KeycloakHttpService,
     private readonly jwksCache: JwksCacheService,
   ) {

@@ -6,7 +6,7 @@ import {
   TokenValidation,
 } from '../constants';
 
-export type KeycloakConnectOptions = string | KeycloakConnectConfig;
+export type KeycloakAuthOptions = string | KeycloakAuthConfig;
 
 /**
  * Multi tenant configuration.
@@ -72,7 +72,7 @@ export interface NestKeycloakConfig {
  * Keycloak Connect options.
  * @see {@link https://github.com/keycloak/keycloak-nodejs-connect/blob/f8e011aea5/middleware/auth-utils/config.js}
  */
-export interface KeycloakConnectConfig extends NestKeycloakConfig {
+export interface KeycloakAuthConfig extends NestKeycloakConfig {
   /**
    * Realm ID.
    */
@@ -84,12 +84,12 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
   resource?: string;
   /**
    * Client/Application ID.
-   * @see {KeycloakConnectOptions#resource}
+   * @see {KeycloakAuthOptions#resource}
    */
   'client-id'?: string;
   /**
    * Client/Application ID.
-   * @see {KeycloakConnectOptions#resource}
+   * @see {KeycloakAuthOptions#resource}
    */
   clientId?: string;
 
@@ -105,7 +105,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * If this is a public application or confidential.
-   * @see {KeycloakConnectOptions#public}
+   * @see {KeycloakAuthOptions#public}
    */
   'public-client'?: boolean;
   /**
@@ -115,17 +115,17 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * Authentication server URL.
-   * @see {KeycloakConnectOptions#authServerUrl}
+   * @see {KeycloakAuthOptions#authServerUrl}
    */
   'auth-server-url'?: string;
   /**
    * Authentication server URL.
-   * @see {KeycloakConnectOptions#authServerUrl}
+   * @see {KeycloakAuthOptions#authServerUrl}
    */
   'server-url'?: string;
   /**
    * Authentication server URL.
-   * @see {KeycloakConnectOptions#authServerUrl}
+   * @see {KeycloakAuthOptions#authServerUrl}
    */
   serverUrl?: string;
   /**
@@ -135,7 +135,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * How many minutes before retrying getting the keys.
-   * @see {KeycloakConnectOptions#minTimeBetweenJwksRequests}
+   * @see {KeycloakAuthOptions#minTimeBetweenJwksRequests}
    */
   'min-time-between-jwks-requests'?: number;
   /**
@@ -145,7 +145,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * If this is a Bearer Only application.
-   * @see {KeycloakConnectOptions#bearerOnly}
+   * @see {KeycloakAuthOptions#bearerOnly}
    */
   'bearer-only'?: boolean;
   /**
@@ -155,7 +155,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * Formatted public-key.
-   * @see {KeycloakConnectOptions#realmPublicKey}
+   * @see {KeycloakAuthOptions#realmPublicKey}
    */
   'realm-public-key'?: string;
   /**
@@ -165,7 +165,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * Verify token audience.
-   * @see {KeycloakConnectOptions#verifyTokenAudience}
+   * @see {KeycloakAuthOptions#verifyTokenAudience}
    */
   'verify-token-audience'?: boolean;
   /**
