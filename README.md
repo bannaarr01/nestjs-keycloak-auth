@@ -5,7 +5,7 @@
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/bannaarr01/nestjs-keycloak-auth?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/bannaarr01/nestjs-keycloak-auth?style=for-the-badge)
 
-A Keycloak authentication and authorization module for [NestJS](https://nestjs.com/), built on top of [keycloak-nodejs-connect](https://github.com/keycloak/keycloak-nodejs-connect).
+A bearer-only Keycloak authentication and authorization module for [NestJS](https://nestjs.com/). Uses standard OIDC discovery and has zero runtime dependency on `keycloak-connect`.
 
 > **Attribution:** This project is a fork of [nest-keycloak-connect](https://github.com/ferrerojosh/nest-keycloak-connect) by [John Joshua Ferrer](https://github.com/ferrerojosh). Licensed under MIT.
 
@@ -13,9 +13,19 @@ A Keycloak authentication and authorization module for [NestJS](https://nestjs.c
 
 ## Features
 
-- Protect your resources using [Keycloak's Authorization Services](https://www.keycloak.org/docs/latest/authorization_services/).
-- Simply add `@Resource`, `@Scopes`, or `@Roles` in your controllers and you're good to go.
+- Bearer-token API authentication and authorization for NestJS.
+- OIDC discovery — endpoints resolved from `.well-known/openid-configuration` (with fallback).
+- ONLINE and OFFLINE token validation (introspection + JWKS signature verification).
+- Per-realm `notBefore` revocation state for multi-tenant safety.
+- Resource/scope authorization via UMA (`@Resource`, `@Scopes`, `@ConditionalScopes`).
+- Role authorization (`@Roles`) with configurable role merge and match modes.
 - Compatible with [Fastify](https://github.com/fastify/fastify) platform.
+
+## Runtime Scope (Important)
+
+- This package is designed for bearer-only API/server flows.
+- It does **not** implement browser/session middleware flows such as login redirects, auth-code callback exchange, session/cookie grant stores, or logout endpoints.
+- It does implement `POST /k_push_not_before` to receive Keycloak admin revocation updates (used by OFFLINE token validation).
 
 ## Installation
 
@@ -43,6 +53,7 @@ KeycloakConnectModule.register({
   realm: 'master',
   clientId: 'my-nestjs-app',
   secret: 'secret',
+  bearerOnly: true,
   policyEnforcement: PolicyEnforcementMode.PERMISSIVE, // optional
   tokenValidation: TokenValidation.ONLINE, // optional
 });
@@ -77,6 +88,7 @@ export class KeycloakConfigService implements KeycloakConnectOptionsFactory {
       realm: 'master',
       clientId: 'my-nestjs-app',
       secret: 'secret',
+      bearerOnly: true,
       policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
       tokenValidation: TokenValidation.ONLINE,
     };
@@ -135,6 +147,10 @@ Adds an authentication guard, you can also have it scoped if you like (using reg
 ### ResourceGuard
 
 Adds a resource guard, which is permissive by default (can be configured see [options](#nest-keycloak-options)). Only controllers annotated with `@Resource` and methods with `@Scopes` are handled by this guard.
+
+When `@EnforcerOptions()` is not provided, default claims are sent for authorization requests:
+- `http.uri`
+- `user.agent`
 
 **_NOTE: This guard is not necessary if you are using role-based authorization exclusively. You can use role guard exclusively for that._**
 
@@ -257,31 +273,60 @@ Setting up for multi-tenant is configured as an option in your configuration:
 }
 ```
 
+## Admin callback endpoint
+
+This module mounts a Keycloak admin callback endpoint:
+
+- `POST /k_push_not_before`
+
+Purpose:
+
+- Accepts signed Keycloak admin callbacks with action `PUSH_NOT_BEFORE`.
+- Updates token revocation cutoff (`notBefore`) used by OFFLINE validation.
+- Stores `notBefore` per realm URL, so one realm update does not affect another realm in multi-tenant setups.
+
+Realm resolution for callback verification:
+
+1. `multiTenant.realmResolver(request)` when configured
+2. single-tenant configured realm (`realm`)
+3. fallback to callback token issuer (`iss`) realm
+
+`k_logout` is intentionally not implemented because there is no session/cookie grant storage layer to invalidate.
+
 ## Configuration options
-
-### Keycloak Options
-
-For Keycloak options, refer to the official [keycloak-connect](https://github.com/keycloak/keycloak-nodejs-connect/blob/main/middleware/auth-utils/config.js) library.
 
 ### Nest Keycloak Options
 
-| Option            | Description                                                              | Required | Default      |
-| ----------------- | ------------------------------------------------------------------------ | -------- | ------------ |
-| cookieKey         | Cookie Key                                                               | no       | KEYCLOAK_JWT |
-| policyEnforcement | Sets the policy enforcement mode                                         | no       | PERMISSIVE   |
-| tokenValidation   | Sets the token validation method                                         | no       | ONLINE       |
-| multiTenant       | Sets the options for [multi-tenant configuration](#multi-tenant-options) | no       | -            |
-| roleMerge         | Sets the merge mode for @Role decorator                                  | no       | OVERRIDE     |
+| Option            | Description                                                                | Required | Default    |
+| ----------------- | -------------------------------------------------------------------------- | -------- | ---------- |
+| policyEnforcement | Sets the policy enforcement mode                                           | no       | PERMISSIVE |
+| tokenValidation   | Sets the token validation method                                           | no       | ONLINE     |
+| multiTenant       | Sets options for [multi-tenant configuration](#multi-tenant-configuration) | no       | -          |
+| roleMerge         | Sets the merge mode for `@Roles` decorator                                | no       | OVERRIDE   |
+
+### Common Keycloak Config Fields
+
+| Option                         | Description                                            |
+| ------------------------------ | ------------------------------------------------------ |
+| `realm`                        | Realm name                                             |
+| `clientId` / `client-id`       | Client ID (or `resource`)                              |
+| `secret` / `credentials.secret` | Client secret (confidential clients)                  |
+| `authServerUrl` / `serverUrl`  | Keycloak base URL                                      |
+| `bearerOnly` / `bearer-only`   | Marks bearer-only behavior                             |
+| `public` / `public-client`     | Public client mode                                     |
+| `realmPublicKey`               | Static realm public key for OFFLINE validation         |
+| `verifyTokenAudience`          | Enables strict audience check in OFFLINE validation    |
+| `minTimeBetweenJwksRequests`   | JWKS retry throttle                                    |
 
 ### Multi Tenant Options
 
-| Option                     | Description                                                                                             | Required | Default |
-| -------------------------- | ------------------------------------------------------------------------------------------------------- | -------- | ------- |
-| resolveAlways              | Option to always resolve the realm and secret. Disabled by default.                                     | no       | false   |
-| realmResolver              | A function that passes a request (from respective platform i.e express or fastify) and returns a string | yes      | -       |
-| realmSecretResolver        | A function that passes the realm string, and an optional request and returns the secret string          | no       | -       |
-| realmAuthServerUrlResolver | A function that passes the realm string, and an optional request and returns the auth server url string | no       | -       |
-| realmClientIdResolver      | A function that passes the realm string, and an optional request and returns the client-id string       | no       | -       |
+| Option                     | Description                                                                                               | Required | Default |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- | -------- | ------- |
+| resolveAlways              | Always resolve realm config instead of using cached values                                                | no       | false   |
+| realmResolver              | Resolves realm from request                                                                               | yes      | -       |
+| realmSecretResolver        | Resolves secret by realm (and optional request)                                                           | no       | -       |
+| realmAuthServerUrlResolver | Resolves auth server URL by realm (and optional request)                                                  | no       | -       |
+| realmClientIdResolver      | Resolves client ID by realm (and optional request)                                                        | yes      | -       |
 
 ## Example app
 

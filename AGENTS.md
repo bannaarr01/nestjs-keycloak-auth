@@ -2,14 +2,26 @@
 
 ## Project Purpose
 
-`nestjs-keycloak-auth` — a self-contained NestJS library for Keycloak authentication and authorization. Published as an npm package, it provides guards, decorators, and services for JWT validation, role-based access control, and resource permission enforcement via standard Keycloak OIDC endpoints.
+`nestjs-keycloak-auth` is a self-contained, bearer-only NestJS library for Keycloak authentication
+and authorization. It provides guards, decorators, and services for JWT validation, role checks, and
+UMA-based resource authorization. Endpoints are resolved via OIDC discovery
+(`.well-known/openid-configuration`) with no runtime dependency on `keycloak-connect`.
+
+## Current Scope
+
+- Bearer-token API/server flows only.
+- OIDC discovery for endpoint resolution (token, introspection, JWKS, userinfo).
+- ONLINE (introspection) and OFFLINE (JWKS signature) token validation.
+- Multi-tenant realm resolution and per-realm revocation (`notBefore`) state.
+- Admin callback support for `POST /k_push_not_before`.
+- No browser/session middleware flows (login redirects, session/cookie stores, logout endpoints).
 
 ## Core Stack
 
-- NestJS (library, not application)
+- NestJS (library package)
 - TypeScript
-- `@nestjs/axios` + `axios` for HTTP calls to Keycloak
-- Node.js native `crypto` for JWT signature verification (no external JWT deps)
+- `@nestjs/axios` + `axios` for outbound calls to Keycloak
+- Node.js native `crypto` for token signature verification
 
 ## Architecture
 
@@ -17,71 +29,73 @@
 
 ```
 src/
-  keycloak-connect.module.ts     # Main dynamic module (register / registerAsync)
-  keycloak-connect.providers.ts  # Provider factories (ResolvedTenantConfig)
-  internal.util.ts               # Request extraction, tenant config resolution
-  constants.ts                   # Injection tokens, enums
-  util.ts                        # JWT payload parsing
-  index.ts                       # Public API exports
+  keycloak-connect.module.ts      # Dynamic module registration
+  keycloak-connect.providers.ts   # Config parsing + ResolvedTenantConfig providers
+  internal.util.ts                # Request extraction + tenant resolution helpers
+  constants.ts                    # Injection tokens + enums
+  util.ts                         # JWT payload parsing utility
+  index.ts                        # Package public entry
 
-  proxy/                         # HTTP proxy layer
-    proxy.module.ts
-    proxy.service.ts             # executeRequest, executeDynamicRequest, URL building
-    proxy-config.service.ts      # Service config registry
-    interfaces/
-    types/
+  controllers/
+    keycloak-admin.controller.ts  # POST /k_push_not_before admin callback
 
   token/
-    keycloak-token.ts            # Native JWT Token class (hasRole, isExpired, etc.)
+    keycloak-token.ts             # Token parser/helpers (roles, permissions, expiry)
+    keycloak-grant.ts             # Access-token-focused grant model
 
   services/
-    keycloak-http.service.ts     # Typed Keycloak API (fetchJwks, introspect, checkPermission)
-    jwks-cache.service.ts        # JWKS caching with key rotation support
-    token-validation.service.ts  # Online (introspect) + offline (JWKS) validation
-    keycloak-multitenant.service.ts  # Multi-tenant config resolution and caching
+    oidc-discovery.service.ts     # OIDC .well-known endpoint discovery + cache
+    keycloak-http.service.ts      # Keycloak endpoint HTTP operations (uses discovered URLs)
+    keycloak-grant.service.ts     # Grant creation + offline validation pre-check
+    token-validation.service.ts   # Online/offline validation + per-realm notBefore cache
+    keycloak-multitenant.service.ts # Tenant config resolution + cache
+    jwks-cache.service.ts         # JWKS retrieval/cache and key lookup
+    keycloak-url.service.ts       # URL helper exports
 
   guards/
-    auth.guard.ts                # JWT validation (online/offline/none)
-    role.guard.ts                # Role-based access (realm:role, client:role, role)
-    resource.guard.ts            # Resource/scope enforcement via UMA
+    auth.guard.ts                 # Authentication guard
+    resource.guard.ts             # UMA resource/scope enforcement
+    role.guard.ts                 # Role enforcement
 
-  decorators/                    # @Public, @Roles, @Resource, @Scopes, etc.
-  interface/                     # Config, tenant, JWKS, enforcer options types
+  decorators/                     # @Public, @Roles, @Resource, @Scopes, etc.
+  interface/                      # Config, tenant, JWKS, grant, enforcer option types
 ```
 
 ### Key Design Decisions
 
-- **No `keycloak-connect` dependency** — all Keycloak interaction is via direct HTTP to standard OIDC endpoints
-- **`ResolvedTenantConfig`** replaces Keycloak instances — plain data object `{ authServerUrl, realm, clientId, secret, realmUrl }`
-- **Proxy module** handles HTTP mechanics (URL building, header merging, timeouts); `KeycloakHttpService` provides typed Keycloak API on top
-- **`KeycloakToken.hasRole()`** matches keycloak-connect's three-form logic: `"role"`, `"realm:role"`, `"client:role"`
-- **Node native crypto** for JWK-to-public-key conversion and signature verification (no `jwk-to-pem`)
+- No `keycloak-connect` runtime dependency.
+- OIDC discovery (`OidcDiscoveryService`) resolves endpoints from `.well-known/openid-configuration` with a 5-minute cache per realm and Keycloak-path fallbacks.
+- `ResolvedTenantConfig` is used instead of Keycloak instance objects.
+- `TokenValidationService` stores `notBefore` per realm URL to avoid cross-realm revocation leakage.
+- `ResourceGuard` sends default claims (`http.uri`, `user.agent`) when no custom `@EnforcerOptions()` claims are set.
+- `AuthGuard` ONLINE path performs `createGrant()` pre-check before introspection for adapter parity.
 
 ## Workflow
 
 ### Verification Before Done
 
-- Run `npm run build` (TypeScript compilation) after code changes
-- Run `npm run lint` (ESLint) before finishing
-- Ensure no `keycloak-connect` imports remain in `src/`
+- Run `npm run build` after code changes.
+- Run `npm run lint` before handoff.
+- Ensure no accidental `keycloak-connect` runtime import is introduced in `src/`.
+- Verify all Keycloak HTTP calls use `OidcDiscoveryService` rather than hardcoded endpoint paths.
 
 ### Git Rules
 
-- Do not run `git commit` or `git push` automatically
-- Read-only git commands are always fine: `git status`, `git diff`, `git log`
-- Developer reviews diffs and performs commit/push manually
+- Do not run `git commit` or `git push` automatically.
+- Read-only git commands are fine (`git status`, `git diff`, `git log`).
+- Developer reviews and performs commit/push manually.
 
 ## Code Conventions
 
-- 3-space indentation (enforced by ESLint)
-- Single quotes (enforced by ESLint)
-- Max line length: 120 characters
-- Pre-commit hook runs `lint-staged` (prettier + eslint on staged `.ts` files)
-- `any` types are warned but acceptable for request objects and dynamic interfaces
+- 3-space indentation.
+- Single quotes.
+- Max line length: 120 characters.
+- Pre-commit hook uses `lint-staged` (Prettier + ESLint on staged `.ts` files).
+- `any` may appear in request/dynamic boundaries when needed.
 
 ## AI Agent Skills
 
-Project-level skills for Claude Code and Codex live under `.claude/skills/`. Claude Code picks them up automatically. To register them into Codex, run the setup script once:
+Project-level skills for Claude Code and Codex live under `.claude/skills/`.
 
 ```bash
 # macOS / Linux
@@ -91,32 +105,32 @@ bash scripts/setup-codex-skills.sh
 pwsh -File scripts/setup-codex-skills.ps1
 ```
 
-When a skill is obviously relevant, follow it instead of inventing a new workflow.
+Use an existing skill when directly relevant.
 
 | Skill | Purpose |
 |---|---|
 | `review` | Review changes against conventions before handoff |
-| `handoff` | Generate a handoff document for session continuity |
+| `handoff` | Generate a handoff document |
 | `sort-imports` | Sort TypeScript imports by line length |
-| `typescript-review` | Strict code review for TS/NestJS changes |
-| `security-audit` | Auth-library-focused security vulnerability audit |
+| `typescript-review` | Strict review for TS/NestJS changes |
+| `security-audit` | Security-focused audit for auth code |
 
 ## Key Commands
 
 ```bash
-npm run build          # Compile TypeScript
-npm run lint           # Run ESLint
-npm run format         # Run Prettier
-npm run clean          # Remove dist/
-npm run release        # Release via release-it
+npm run build
+npm run lint
+npm run format
+npm run clean
+npm run release
 ```
 
 ## Key Files
 
 - Module entry: `src/keycloak-connect.module.ts`
 - Public API: `src/index.ts`
+- Auth guard: `src/guards/auth.guard.ts`
+- Resource guard: `src/guards/resource.guard.ts`
+- Admin callback controller: `src/controllers/keycloak-admin.controller.ts`
+- Token validation: `src/services/token-validation.service.ts`
 - Package config: `package.json`
-- TypeScript config: `tsconfig.json`
-- ESLint config: `eslint.config.mjs`
-- Husky pre-commit: `.husky/pre-commit`
-- CI workflow: `.github/workflows/build.yml`
