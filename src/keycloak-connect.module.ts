@@ -1,5 +1,6 @@
 import { HttpModule } from '@nestjs/axios';
 import { JwksCacheService } from './services/jwks-cache.service';
+import { OidcDiscoveryService } from './services/oidc-discovery.service';
 import { KeycloakHttpService } from './services/keycloak-http.service';
 import { KeycloakGrantService } from './services/keycloak-grant.service';
 import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
@@ -40,6 +41,7 @@ export * from './interface/enforcer-options.interface';
 export * from './interface/jwks.interface';
 export * from './interface/keycloak-grant.interface';
 export * from './services/keycloak-multitenant.service';
+export * from './services/oidc-discovery.service';
 export * from './services/keycloak-http.service';
 export * from './services/keycloak-url.service';
 export * from './services/keycloak-grant.service';
@@ -72,6 +74,7 @@ export class KeycloakConnectModule {
         provide: KEYCLOAK_MULTITENANT_SERVICE,
         useClass: KeycloakMultiTenantService,
       },
+      OidcDiscoveryService,
       KeycloakHttpService,
       KeycloakGrantService,
       JwksCacheService,
@@ -111,6 +114,7 @@ export class KeycloakConnectModule {
         provide: KEYCLOAK_MULTITENANT_SERVICE,
         useClass: KeycloakMultiTenantService,
       },
+      OidcDiscoveryService,
       KeycloakHttpService,
       KeycloakGrantService,
       JwksCacheService,

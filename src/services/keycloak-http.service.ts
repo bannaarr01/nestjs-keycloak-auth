@@ -1,6 +1,7 @@
 import { firstValueFrom } from 'rxjs';
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { OidcDiscoveryService } from './oidc-discovery.service';
 import { JwksResponse } from '../interface/jwks.interface';
 import {
   KeycloakGrantResponse,
@@ -9,14 +10,19 @@ import {
   PermissionCheckOptions,
 } from '../interface/keycloak-grant.interface';
 
+const X_CLIENT = 'nestjs-keycloak-auth';
+
 @Injectable()
 export class KeycloakHttpService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly oidcDiscovery: OidcDiscoveryService,
+  ) {}
 
   /**
    * Build authorization headers for token endpoint requests.
    * Public clients send only client_id in the body; confidential clients
-   * use HTTP Basic auth (matching keycloak-connect's postOptions).
+   * use HTTP Basic auth.
    */
   private buildAuthHeaders(
     clientId: string,
@@ -25,7 +31,7 @@ export class KeycloakHttpService {
   ): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'X-Client': 'keycloak-nodejs-connect',
+      'X-Client': X_CLIENT,
     };
     if (!isPublic) {
       headers.Authorization = `Basic ${Buffer.from(`${clientId}:${secret}`).toString('base64')}`;
@@ -34,16 +40,17 @@ export class KeycloakHttpService {
   }
 
   /**
-   * Fetch the JWKS (JSON Web Key Set) from the Keycloak realm.
+   * Fetch the JWKS (JSON Web Key Set) from the discovered jwks_uri.
    */
   async fetchJwks(realmUrl: string): Promise<JwksResponse> {
+    const endpoints = await this.oidcDiscovery.getEndpoints(realmUrl);
     const { data } = await firstValueFrom(
       this.httpService.request<JwksResponse>({
-        url: `${realmUrl}/protocol/openid-connect/certs`,
+        url: endpoints.jwks_uri,
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'X-Client': 'keycloak-nodejs-connect',
+          'X-Client': X_CLIENT,
         },
         timeout: 10000,
       }),
@@ -52,7 +59,7 @@ export class KeycloakHttpService {
   }
 
   /**
-   * Introspect a token using the Keycloak token introspection endpoint.
+   * Introspect a token using the discovered introspection_endpoint.
    * Returns the introspection response (with `active` boolean).
    */
   async introspectToken(
@@ -61,6 +68,7 @@ export class KeycloakHttpService {
     secret: string,
     token: string,
   ): Promise<{ active: boolean; [key: string]: unknown }> {
+    const endpoints = await this.oidcDiscovery.getEndpoints(realmUrl);
     const body = new URLSearchParams({
       client_id: clientId,
       client_secret: secret,
@@ -69,12 +77,12 @@ export class KeycloakHttpService {
 
     const { data } = await firstValueFrom(
       this.httpService.request<{ active: boolean; [key: string]: unknown }>({
-        url: `${realmUrl}/protocol/openid-connect/token/introspect`,
+        url: endpoints.introspection_endpoint,
         method: 'POST',
         data: body,
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Client': 'keycloak-nodejs-connect',
+          'X-Client': X_CLIENT,
         },
         timeout: 10000,
       }),
@@ -92,6 +100,7 @@ export class KeycloakHttpService {
     scope?: string,
     isPublic: boolean = false,
   ): Promise<KeycloakGrantResponse> {
+    const endpoints = await this.oidcDiscovery.getEndpoints(realmUrl);
     const params = new URLSearchParams({
       grant_type: 'client_credentials',
       scope: scope || 'openid',
@@ -100,7 +109,7 @@ export class KeycloakHttpService {
 
     const { data } = await firstValueFrom(
       this.httpService.request<KeycloakGrantResponse>({
-        url: `${realmUrl}/protocol/openid-connect/token`,
+        url: endpoints.token_endpoint,
         method: 'POST',
         data: params.toString(),
         headers: this.buildAuthHeaders(clientId, secret, isPublic),
@@ -111,20 +120,21 @@ export class KeycloakHttpService {
   }
 
   /**
-   * Fetch user info from the Keycloak userinfo endpoint.
+   * Fetch user info from the discovered userinfo_endpoint.
    */
   async getUserInfo(
     realmUrl: string,
     accessToken: string,
   ): Promise<KeycloakUserInfoResponse> {
+    const endpoints = await this.oidcDiscovery.getEndpoints(realmUrl);
     const { data } = await firstValueFrom(
       this.httpService.request<KeycloakUserInfoResponse>({
-        url: `${realmUrl}/protocol/openid-connect/userinfo`,
+        url: endpoints.userinfo_endpoint,
         method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
           Accept: 'application/json',
-          'X-Client': 'keycloak-nodejs-connect',
+          'X-Client': X_CLIENT,
         },
         timeout: 10000,
       }),
@@ -133,7 +143,7 @@ export class KeycloakHttpService {
   }
 
   /**
-   * Check permissions using the Keycloak token endpoint (UMA grant).
+   * Check permissions using the discovered token_endpoint (UMA grant).
    * Supports response_mode 'decision' (returns boolean), 'permissions'
    * (returns permission list), and 'token' (returns grant response).
    */
@@ -145,6 +155,7 @@ export class KeycloakHttpService {
     permissions: string[],
     options?: PermissionCheckOptions,
   ): Promise<boolean | KeycloakPermission[] | KeycloakGrantResponse> {
+    const endpoints = await this.oidcDiscovery.getEndpoints(realmUrl);
     const responseMode = options?.response_mode || 'decision';
     const audience = options?.audience || clientId;
     const isPublic = options?.isPublic ?? false;
@@ -184,13 +195,13 @@ export class KeycloakHttpService {
         ? {
             Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Client': 'keycloak-nodejs-connect',
+            'X-Client': X_CLIENT,
           }
         : this.buildAuthHeaders(clientId, secret, false);
 
       const { data: result } = await firstValueFrom(
         this.httpService.request<Record<string, unknown>>({
-          url: `${realmUrl}/protocol/openid-connect/token`,
+          url: endpoints.token_endpoint,
           method: 'POST',
           data: params.toString(),
           headers,
