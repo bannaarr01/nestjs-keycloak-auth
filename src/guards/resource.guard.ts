@@ -174,7 +174,7 @@ export class ResourceGuard implements CanActivate {
     }
 
     // Server-side permission check
-    const claims = enforcerOptions?.claims?.(request);
+    const claims = this.resolveClaims(request, enforcerOptions);
     const responseMode = enforcerOptions?.response_mode ?? 'permissions';
     const audience =
       enforcerOptions?.resource_server_id ?? tenantConfig.clientId;
@@ -326,5 +326,35 @@ export class ResourceGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private resolveClaims(
+    request: Record<string, unknown>,
+    enforcerOptions?: KeycloakEnforcerOptions,
+  ): Record<string, unknown> | undefined {
+    if (enforcerOptions) {
+      return enforcerOptions.claims?.(request);
+    }
+
+    const requestHeaders = request.headers as
+      | Record<string, string | string[] | undefined>
+      | undefined;
+    const userAgentRaw = requestHeaders?.['user-agent'];
+    const userAgent = Array.isArray(userAgentRaw)
+      ? userAgentRaw[0]
+      : userAgentRaw;
+    const httpUri =
+      (typeof request.url === 'string' && request.url) ||
+      (typeof request.originalUrl === 'string' && request.originalUrl) ||
+      '';
+
+    this.logger.verbose(
+      `Enforcing claims, http.uri: ${httpUri}, user.agent: ${userAgent ?? ''}`,
+    );
+
+    return {
+      'http.uri': [httpUri],
+      'user.agent': [userAgent ?? ''],
+    };
   }
 }

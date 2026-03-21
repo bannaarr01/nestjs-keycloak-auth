@@ -11,6 +11,7 @@ export class TokenValidationService {
   private readonly logger = new Logger(TokenValidationService.name);
   private readonly publicKey: string | undefined;
   private _notBefore = 0;
+  private readonly notBeforeByRealm = new Map<string, number>();
 
   constructor(
     @Inject(KEYCLOAK_CONNECT_OPTIONS)
@@ -37,6 +38,21 @@ export class TokenValidationService {
 
   set notBefore(value: number) {
     this._notBefore = value;
+  }
+
+  getNotBefore(realmUrl?: string): number {
+    if (!realmUrl) {
+      return this._notBefore;
+    }
+    return this.notBeforeByRealm.get(realmUrl) ?? this._notBefore;
+  }
+
+  setNotBefore(value: number, realmUrl?: string): void {
+    if (!realmUrl) {
+      this._notBefore = value;
+      return;
+    }
+    this.notBeforeByRealm.set(realmUrl, value);
   }
 
   /**
@@ -97,9 +113,10 @@ export class TokenValidationService {
       }
 
       // Check notBefore policy (stale token)
-      if (token.content.iat < this._notBefore) {
+      const realmNotBefore = this.getNotBefore(realmUrl);
+      if (token.content.iat < realmNotBefore) {
         this.logger.verbose(
-          `invalid token (stale token): iat ${token.content.iat} < notBefore ${this._notBefore}`,
+          `invalid token (stale token): iat ${token.content.iat} < notBefore ${realmNotBefore}`,
         );
         return false;
       }

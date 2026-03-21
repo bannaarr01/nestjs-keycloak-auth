@@ -1,6 +1,7 @@
 import { parseToken } from '../util';
 import { Reflector } from '@nestjs/core';
 import { META_PUBLIC } from '../decorators/public.decorator';
+import { KeycloakGrantService } from '../services/keycloak-grant.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { TokenValidationService } from '../services/token-validation.service';
 import {
@@ -42,6 +43,7 @@ export class AuthGuard implements CanActivate {
     @Inject(KEYCLOAK_MULTITENANT_SERVICE)
     private multiTenant: KeycloakMultiTenantService,
     private tokenValidation: TokenValidationService,
+    private keycloakGrant: KeycloakGrantService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -116,6 +118,16 @@ export class AuthGuard implements CanActivate {
     try {
       switch (tokenValidationMethod) {
         case TokenValidation.ONLINE:
+          try {
+            await this.keycloakGrant.createGrant(
+              { access_token: jwt },
+              tenantConfig.realmUrl,
+              tenantConfig.clientId,
+            );
+          } catch (ex) {
+            this.logger.warn(`Cannot validate access token: ${ex}`);
+            return false;
+          }
           return await this.tokenValidation.validateOnline(
             jwt,
             tenantConfig.realmUrl,

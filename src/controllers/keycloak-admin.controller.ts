@@ -1,9 +1,15 @@
 import * as crypto from 'crypto';
-import { KEYCLOAK_INSTANCE } from '../constants';
+import {
+  KEYCLOAK_CONNECT_OPTIONS,
+  KEYCLOAK_INSTANCE,
+  KEYCLOAK_MULTITENANT_SERVICE,
+} from '../constants';
 import { KeycloakToken } from '../token/keycloak-token';
 import { JwksCacheService } from '../services/jwks-cache.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { TokenValidationService } from '../services/token-validation.service';
+import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
+import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import {
   Body,
   Controller,
@@ -24,9 +30,11 @@ interface ServerResponse {
 interface ServerRequest {
   body?: unknown;
   rawBody?: unknown;
+  [key: string]: unknown;
 }
 
 class AdminAuthError extends Error {}
+class AdminConfigError extends Error {}
 
 /**
  * Handles Keycloak admin callbacks (k_logout and k_push_not_before).
@@ -43,6 +51,10 @@ export class KeycloakAdminController {
   constructor(
     @Inject(KEYCLOAK_INSTANCE)
     private readonly tenantConfig: ResolvedTenantConfig,
+    @Inject(KEYCLOAK_CONNECT_OPTIONS)
+    private readonly keycloakOpts: KeycloakConnectConfig,
+    @Inject(KEYCLOAK_MULTITENANT_SERVICE)
+    private readonly multiTenant: KeycloakMultiTenantService,
     private readonly tokenValidation: TokenValidationService,
     private readonly jwksCache: JwksCacheService,
   ) {}
@@ -66,7 +78,8 @@ export class KeycloakAdminController {
         response.status(400).end('invalid token');
         return;
       }
-      await this.verifyAdminSignature(token);
+      const tenantConfig = await this.resolveTenantConfig(request, token);
+      await this.verifyAdminSignature(token, tenantConfig.realmUrl);
 
       if (token.content.action === 'LOGOUT') {
         const sessionIDs = token.content.adapterSessionIds;
@@ -75,10 +88,12 @@ export class KeycloakAdminController {
             response.status(400).end('invalid token');
             return;
           }
-          // Global notBefore update
-          this.tokenValidation.notBefore = token.content.notBefore;
+          this.tokenValidation.setNotBefore(
+            token.content.notBefore,
+            tenantConfig.realmUrl,
+          );
           this.logger.log(
-            `Admin logout: notBefore set to ${token.content.notBefore}`,
+            `Admin logout (${tenantConfig.realm}): notBefore set to ${token.content.notBefore}`,
           );
         }
         response.send('ok');
@@ -111,16 +126,20 @@ export class KeycloakAdminController {
         response.status(400).end('invalid token');
         return;
       }
-      await this.verifyAdminSignature(token);
+      const tenantConfig = await this.resolveTenantConfig(request, token);
+      await this.verifyAdminSignature(token, tenantConfig.realmUrl);
 
       if (token.content.action === 'PUSH_NOT_BEFORE') {
         if (typeof token.content.notBefore !== 'number') {
           response.status(400).end('invalid token');
           return;
         }
-        this.tokenValidation.notBefore = token.content.notBefore;
+        this.tokenValidation.setNotBefore(
+          token.content.notBefore,
+          tenantConfig.realmUrl,
+        );
         this.logger.log(
-          `Push not-before: notBefore set to ${token.content.notBefore}`,
+          `Push not-before (${tenantConfig.realm}): notBefore set to ${token.content.notBefore}`,
         );
         response.send('ok');
       } else {
@@ -169,7 +188,10 @@ export class KeycloakAdminController {
     return null;
   }
 
-  private async verifyAdminSignature(token: KeycloakToken): Promise<void> {
+  private async verifyAdminSignature(
+    token: KeycloakToken,
+    realmUrl: string,
+  ): Promise<void> {
     const kid =
       token.header && typeof token.header.kid === 'string'
         ? token.header.kid
@@ -180,7 +202,7 @@ export class KeycloakAdminController {
 
     let key: crypto.KeyObject;
     try {
-      key = await this.jwksCache.getKey(this.tenantConfig.realmUrl, kid);
+      key = await this.jwksCache.getKey(realmUrl, kid);
     } catch (err) {
       throw new AdminAuthError(
         `failed to load public key to verify token. Reason: ${err}`,
@@ -214,5 +236,53 @@ export class KeycloakAdminController {
       PS512: 'RSA-SHA512',
     };
     return algMap[jwtAlg] || 'RSA-SHA256';
+  }
+
+  private async resolveTenantConfig(
+    request: ServerRequest,
+    token: KeycloakToken,
+  ): Promise<ResolvedTenantConfig> {
+    if (this.keycloakOpts.multiTenant?.realmResolver) {
+      try {
+        const resolvedRealm =
+          this.keycloakOpts.multiTenant.realmResolver(request);
+        const realm =
+          resolvedRealm instanceof Promise
+            ? await resolvedRealm
+            : resolvedRealm;
+        if (!realm) {
+          throw new AdminConfigError(
+            'admin request failed: realm resolver returned an empty realm',
+          );
+        }
+        return await this.multiTenant.get(realm, request);
+      } catch (err) {
+        if (err instanceof AdminConfigError) {
+          throw err;
+        }
+        throw new AdminConfigError(
+          `admin request failed: cannot resolve tenant config. Reason: ${err}`,
+        );
+      }
+    }
+
+    // Single-tenant configured realm: use static tenant config.
+    if (this.keycloakOpts.realm) {
+      return this.tenantConfig;
+    }
+
+    // Multi-tenant fallback by issuer realm when available in callback token.
+    const issuer =
+      token.content && typeof token.content.iss === 'string'
+        ? token.content.iss
+        : undefined;
+    const issuerRealm = issuer?.split('/').pop();
+    if (issuerRealm) {
+      return await this.multiTenant.get(issuerRealm, request);
+    }
+
+    throw new AdminConfigError(
+      'admin request failed: cannot resolve realm for admin callback in multi-tenant mode',
+    );
   }
 }
