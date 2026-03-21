@@ -22,13 +22,13 @@ A Keycloak authentication and authorization module for [NestJS](https://nestjs.c
 ### Yarn
 
 ```bash
-yarn add nestjs-keycloak-auth keycloak-connect
+yarn add nestjs-keycloak-auth
 ```
 
 ### NPM
 
 ```bash
-npm install nestjs-keycloak-auth keycloak-connect --save
+npm install nestjs-keycloak-auth --save
 ```
 
 ## Getting Started
