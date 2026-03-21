@@ -1,17 +1,11 @@
 import { parseToken } from './util';
 import { ExecutionContext } from '@nestjs/common';
 import { ResolvedTenantConfig } from './interface/tenant-config.interface';
+import { KeycloakRequestLike } from './interface/keycloak-request.interface';
 import { KeycloakAuthConfig } from './interface/keycloak-auth-options.interface';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 
-export interface KeycloakRequestLike {
-  headers: Record<string, string | string[] | undefined>;
-  user?: Record<string, unknown>;
-  accessToken?: string;
-  scopes?: string[];
-  permissions?: unknown[];
-  [key: string]: unknown;
-}
+export { KeycloakRequestLike };
 
 /**
  * Resolves the tenant configuration for the current request.

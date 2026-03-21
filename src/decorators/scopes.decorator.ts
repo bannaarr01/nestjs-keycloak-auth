@@ -1,19 +1,16 @@
 import { extractRequest } from '../internal.util';
-import { KeycloakToken } from '../token/keycloak-token';
+import { ConditionalScopeFn } from '../types/conditional-scope.type';
 import {
   createParamDecorator,
   ExecutionContext,
   SetMetadata,
 } from '@nestjs/common';
 
+export { ConditionalScopeFn };
+
 export const META_SCOPES = 'scopes';
 
 export const META_CONDITIONAL_SCOPES = 'conditional-scopes';
-
-export type ConditionalScopeFn = (
-  request: unknown,
-  token: KeycloakToken,
-) => string[];
 
 /**
  * Keycloak authorization scopes.

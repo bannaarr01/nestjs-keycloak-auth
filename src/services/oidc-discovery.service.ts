@@ -1,21 +1,9 @@
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
+import { CachedDiscovery, OidcEndpoints } from '../interface/oidc.interface';
 
-/**
- * Discovered OIDC endpoint URLs from .well-known/openid-configuration.
- */
-export interface OidcEndpoints {
-  jwks_uri: string;
-  token_endpoint: string;
-  introspection_endpoint: string;
-  userinfo_endpoint: string;
-}
-
-interface CachedDiscovery {
-  endpoints: OidcEndpoints;
-  fetchedAt: number;
-}
+export { OidcEndpoints };
 
 /**
  * Fetches and caches OIDC discovery metadata per realm.

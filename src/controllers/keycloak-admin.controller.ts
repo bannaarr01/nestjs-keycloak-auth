@@ -2,6 +2,7 @@ import * as crypto from 'crypto';
 import { KeycloakToken } from '../token/keycloak-token';
 import { JwksCacheService } from '../services/jwks-cache.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import { ServerRequest, ServerResponse } from '../interface/server.interface';
 import { TokenValidationService } from '../services/token-validation.service';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
@@ -20,18 +21,6 @@ import {
   KEYCLOAK_AUTH_OPTIONS,
   KEYCLOAK_MULTITENANT_SERVICE,
 } from '../constants';
-
-interface ServerResponse {
-  status(code: number): ServerResponse;
-  end(data?: string): void;
-  send(data: string): void;
-}
-
-interface ServerRequest {
-  body?: unknown;
-  rawBody?: unknown;
-  [key: string]: unknown;
-}
 
 class AdminAuthError extends Error {}
 class AdminConfigError extends Error {}

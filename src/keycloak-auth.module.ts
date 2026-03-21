@@ -2,8 +2,8 @@ import { HttpModule } from '@nestjs/axios';
 import { JwksCacheService } from './services/jwks-cache.service';
 import { KeycloakHttpService } from './services/keycloak-http.service';
 import { KeycloakGrantService } from './services/keycloak-grant.service';
-import { OidcDiscoveryService } from './services/oidc-discovery.service';
 import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
+import { OidcDiscoveryService } from './services/oidc-discovery.service';
 import { TokenValidationService } from './services/token-validation.service';
 import {
   KEYCLOAK_AUTH_OPTIONS,
@@ -33,9 +33,13 @@ export * from './decorators/scopes.decorator';
 export * from './guards/auth.guard';
 export * from './guards/resource.guard';
 export * from './guards/role.guard';
+export * from './interface/jwt.interface';
 export * from './interface/keycloak-auth-module-async-options.interface';
 export * from './interface/keycloak-auth-options-factory.interface';
 export * from './interface/keycloak-auth-options.interface';
+export * from './interface/keycloak-request.interface';
+export * from './interface/oidc.interface';
+export * from './interface/server.interface';
 export * from './interface/tenant-config.interface';
 export * from './interface/enforcer-options.interface';
 export * from './interface/jwks.interface';
@@ -50,6 +54,7 @@ export * from './services/token-validation.service';
 export * from './controllers/keycloak-admin.controller';
 export * from './token/keycloak-token';
 export * from './token/keycloak-grant';
+export * from './types/conditional-scope.type';
 export * from './util';
 
 @Module({})
