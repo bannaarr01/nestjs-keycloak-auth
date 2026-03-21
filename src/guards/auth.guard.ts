@@ -3,11 +3,8 @@ import { Reflector } from '@nestjs/core';
 import { META_PUBLIC } from '../decorators/public.decorator';
 import { KeycloakGrantService } from '../services/keycloak-grant.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import { extractRequest, useTenantConfig } from '../internal.util';
 import { TokenValidationService } from '../services/token-validation.service';
-import {
-  extractRequestAndAttachCookie,
-  useTenantConfig,
-} from '../internal.util';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 import {
@@ -20,7 +17,6 @@ import {
 } from '@nestjs/common';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
-  KEYCLOAK_COOKIE_DEFAULT,
   KEYCLOAK_INSTANCE,
   KEYCLOAK_MULTITENANT_SERVICE,
   TokenValidation,
@@ -53,8 +49,7 @@ export class AuthGuard implements CanActivate {
     ]);
 
     // Extract request/response
-    const cookieKey = this.keycloakOpts.cookieKey || KEYCLOAK_COOKIE_DEFAULT;
-    const [request] = await extractRequestAndAttachCookie(context, cookieKey);
+    const [request] = extractRequest(context);
 
     // if is not an HTTP request ignore this guard
     if (!request) {
@@ -89,7 +84,7 @@ export class AuthGuard implements CanActivate {
     if (isValidToken) {
       // Attach user info object
       request.user = parseToken(jwt);
-      // Attach raw access token JWT extracted from bearer/cookie
+      // Attach raw access token JWT extracted from bearer
       request.accessToken = jwt;
 
       this.logger.verbose('User authenticated', { user: request.user });

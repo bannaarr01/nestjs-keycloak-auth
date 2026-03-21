@@ -55,7 +55,6 @@
     "@nestjs/axios": ">=3.0.0",
     "@nestjs/common": ">=6.0.0 <12.0.0",
     "@nestjs/core": ">=6.0.0 <12.0.0",
-    "@nestjs/graphql": ">=6",
     "axios": ">=1.0.0"
   },
   "devDependencies": {
@@ -86,9 +85,6 @@
     "typescript-eslint": "^8.57.1"
   },
   "peerDependenciesMeta": {
-    "@nestjs/graphql": {
-      "optional": true
-    },
     "@nestjs/axios": {
       "optional": false
     },

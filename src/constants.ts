@@ -14,11 +14,6 @@ export const KEYCLOAK_INSTANCE = 'KEYCLOAK_INSTANCE';
 export const KEYCLOAK_MULTITENANT_SERVICE = 'KEYCLOAK_MULTITENANT_SERVICE';
 
 /**
- * Default cookie key.
- */
-export const KEYCLOAK_COOKIE_DEFAULT = 'KEYCLOAK_JWT';
-
-/**
  * Role matching mode.
  */
 export enum RoleMatch {

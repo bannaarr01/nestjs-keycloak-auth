@@ -1,7 +1,7 @@
-import { ProxyService } from '../proxy/proxy.service';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { firstValueFrom } from 'rxjs';
+import { Injectable } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
 import { JwksResponse } from '../interface/jwks.interface';
-import { ProxyConfigService } from '../proxy/proxy-config.service';
 import {
   KeycloakGrantResponse,
   KeycloakPermission,
@@ -9,38 +9,9 @@ import {
   PermissionCheckOptions,
 } from '../interface/keycloak-grant.interface';
 
-const KEYCLOAK_SERVICE = 'keycloak';
-
 @Injectable()
-export class KeycloakHttpService implements OnModuleInit {
-  constructor(
-    private readonly proxyService: ProxyService,
-    private readonly proxyConfigService: ProxyConfigService,
-  ) {}
-
-  onModuleInit() {
-    // Register a default keycloak service config.
-    // The baseUrl will be overridden per-request for multi-tenant,
-    // or set to the single-tenant realmUrl.
-    if (!this.proxyConfigService.getServiceConfig(KEYCLOAK_SERVICE)) {
-      this.proxyConfigService.setServiceConfig(KEYCLOAK_SERVICE, {
-        baseUrl: 'http://localhost', // placeholder, overridden per-request
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Client': 'keycloak-nodejs-connect',
-        },
-        timeoutMs: 10000,
-        endpoints: {
-          jwks: { targetEndpoint: 'protocol/openid-connect/certs' },
-          introspect: {
-            targetEndpoint: 'protocol/openid-connect/token/introspect',
-          },
-          token: { targetEndpoint: 'protocol/openid-connect/token' },
-          userinfo: { targetEndpoint: 'protocol/openid-connect/userinfo' },
-        },
-      });
-    }
-  }
+export class KeycloakHttpService {
+  constructor(private readonly httpService: HttpService) {}
 
   /**
    * Build authorization headers for token endpoint requests.
@@ -66,18 +37,18 @@ export class KeycloakHttpService implements OnModuleInit {
    * Fetch the JWKS (JSON Web Key Set) from the Keycloak realm.
    */
   async fetchJwks(realmUrl: string): Promise<JwksResponse> {
-    return this.proxyService.executeRequest<JwksResponse>(
-      KEYCLOAK_SERVICE,
-      'jwks',
-      'GET',
-      {
+    const { data } = await firstValueFrom(
+      this.httpService.request<JwksResponse>({
+        url: `${realmUrl}/protocol/openid-connect/certs`,
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'X-Client': 'keycloak-nodejs-connect',
         },
-      },
-      realmUrl,
+        timeout: 10000,
+      }),
     );
+    return data;
   }
 
   /**
@@ -90,19 +61,25 @@ export class KeycloakHttpService implements OnModuleInit {
     secret: string,
     token: string,
   ): Promise<{ active: boolean; [key: string]: unknown }> {
-    const data = new URLSearchParams({
+    const body = new URLSearchParams({
       client_id: clientId,
       client_secret: secret,
       token,
     }).toString();
 
-    return this.proxyService.executeRequest(
-      KEYCLOAK_SERVICE,
-      'introspect',
-      'POST',
-      { data },
-      realmUrl,
+    const { data } = await firstValueFrom(
+      this.httpService.request<{ active: boolean; [key: string]: unknown }>({
+        url: `${realmUrl}/protocol/openid-connect/token/introspect`,
+        method: 'POST',
+        data: body,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Client': 'keycloak-nodejs-connect',
+        },
+        timeout: 10000,
+      }),
     );
+    return data;
   }
 
   /**
@@ -121,76 +98,16 @@ export class KeycloakHttpService implements OnModuleInit {
       client_id: clientId,
     });
 
-    return this.proxyService.executeRequest<KeycloakGrantResponse>(
-      KEYCLOAK_SERVICE,
-      'token',
-      'POST',
-      {
+    const { data } = await firstValueFrom(
+      this.httpService.request<KeycloakGrantResponse>({
+        url: `${realmUrl}/protocol/openid-connect/token`,
+        method: 'POST',
         data: params.toString(),
         headers: this.buildAuthHeaders(clientId, secret, isPublic),
-      },
-      realmUrl,
+        timeout: 10000,
+      }),
     );
-  }
-
-  /**
-   * Obtain a token using the resource owner password credentials grant (direct grant).
-   */
-  async obtainDirectGrant(
-    realmUrl: string,
-    clientId: string,
-    secret: string,
-    username: string,
-    password: string,
-    scope?: string,
-    isPublic: boolean = false,
-  ): Promise<KeycloakGrantResponse> {
-    const params = new URLSearchParams({
-      grant_type: 'password',
-      client_id: clientId,
-      username,
-      password,
-      scope: scope || 'openid',
-    });
-
-    return this.proxyService.executeRequest<KeycloakGrantResponse>(
-      KEYCLOAK_SERVICE,
-      'token',
-      'POST',
-      {
-        data: params.toString(),
-        headers: this.buildAuthHeaders(clientId, secret, isPublic),
-      },
-      realmUrl,
-    );
-  }
-
-  /**
-   * Refresh an access token using a refresh_token.
-   */
-  async refreshToken(
-    realmUrl: string,
-    clientId: string,
-    secret: string,
-    refreshToken: string,
-    isPublic: boolean = false,
-  ): Promise<KeycloakGrantResponse> {
-    const params = new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-      client_id: clientId,
-    });
-
-    return this.proxyService.executeRequest<KeycloakGrantResponse>(
-      KEYCLOAK_SERVICE,
-      'token',
-      'POST',
-      {
-        data: params.toString(),
-        headers: this.buildAuthHeaders(clientId, secret, isPublic),
-      },
-      realmUrl,
-    );
+    return data;
   }
 
   /**
@@ -200,19 +117,19 @@ export class KeycloakHttpService implements OnModuleInit {
     realmUrl: string,
     accessToken: string,
   ): Promise<KeycloakUserInfoResponse> {
-    return this.proxyService.executeRequest<KeycloakUserInfoResponse>(
-      KEYCLOAK_SERVICE,
-      'userinfo',
-      'GET',
-      {
+    const { data } = await firstValueFrom(
+      this.httpService.request<KeycloakUserInfoResponse>({
+        url: `${realmUrl}/protocol/openid-connect/userinfo`,
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${accessToken}`,
           Accept: 'application/json',
           'X-Client': 'keycloak-nodejs-connect',
         },
-      },
-      realmUrl,
+        timeout: 10000,
+      }),
     );
+    return data;
   }
 
   /**
@@ -271,17 +188,14 @@ export class KeycloakHttpService implements OnModuleInit {
           }
         : this.buildAuthHeaders(clientId, secret, false);
 
-      const result = await this.proxyService.executeRequest<
-        Record<string, unknown>
-      >(
-        KEYCLOAK_SERVICE,
-        'token',
-        'POST',
-        {
+      const { data: result } = await firstValueFrom(
+        this.httpService.request<Record<string, unknown>>({
+          url: `${realmUrl}/protocol/openid-connect/token`,
+          method: 'POST',
           data: params.toString(),
           headers,
-        },
-        realmUrl,
+          timeout: 10000,
+        }),
       );
 
       if (responseMode === 'decision') {

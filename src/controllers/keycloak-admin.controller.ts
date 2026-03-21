@@ -1,15 +1,15 @@
-import * as crypto from 'crypto';
 import {
-  KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_INSTANCE,
+  KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_MULTITENANT_SERVICE,
 } from '../constants';
+import * as crypto from 'crypto';
 import { KeycloakToken } from '../token/keycloak-token';
 import { JwksCacheService } from '../services/jwks-cache.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { TokenValidationService } from '../services/token-validation.service';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
+import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 import {
   Body,
   Controller,
@@ -37,12 +37,11 @@ class AdminAuthError extends Error {}
 class AdminConfigError extends Error {}
 
 /**
- * Handles Keycloak admin callbacks (k_logout and k_push_not_before).
+ * Handles the Keycloak admin k_push_not_before callback.
  * Matches keycloak-connect's admin.js middleware behavior.
  *
- * These endpoints are called by the Keycloak server when an admin
- * triggers session invalidation or pushes a not-before policy from
- * the Keycloak admin console.
+ * This endpoint is called by the Keycloak server when an admin
+ * pushes a not-before policy from the Keycloak admin console.
  */
 @Controller()
 export class KeycloakAdminController {
@@ -58,54 +57,6 @@ export class KeycloakAdminController {
     private readonly tokenValidation: TokenValidationService,
     private readonly jwksCache: JwksCacheService,
   ) {}
-
-  @Post('k_logout')
-  @HttpCode(200)
-  async handleLogout(
-    @Body() body: unknown,
-    @Req() request: ServerRequest,
-    @Res() response: ServerResponse,
-  ) {
-    try {
-      const payload = this.extractAdminPayload(body, request);
-      if (!payload) {
-        response.status(400).end('invalid token');
-        return;
-      }
-
-      const token = new KeycloakToken(payload);
-      if (!token.signed) {
-        response.status(400).end('invalid token');
-        return;
-      }
-      const tenantConfig = await this.resolveTenantConfig(request, token);
-      await this.verifyAdminSignature(token, tenantConfig.realmUrl);
-
-      if (token.content.action === 'LOGOUT') {
-        const sessionIDs = token.content.adapterSessionIds;
-        if (!sessionIDs) {
-          if (typeof token.content.notBefore !== 'number') {
-            response.status(400).end('invalid token');
-            return;
-          }
-          this.tokenValidation.setNotBefore(
-            token.content.notBefore,
-            tenantConfig.realmUrl,
-          );
-          this.logger.log(
-            `Admin logout (${tenantConfig.realm}): notBefore set to ${token.content.notBefore}`,
-          );
-        }
-        response.send('ok');
-      } else {
-        response.status(400).end();
-      }
-    } catch (err) {
-      this.logger.warn(`Admin logout failed: ${err}`);
-      const status = err instanceof AdminAuthError ? 401 : 400;
-      response.status(status).end(err instanceof Error ? err.message : 'error');
-    }
-  }
 
   @Post('k_push_not_before')
   @HttpCode(200)

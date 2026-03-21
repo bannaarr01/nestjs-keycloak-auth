@@ -48,11 +48,6 @@ export interface MultiTenantOptions {
  */
 export interface NestKeycloakConfig {
   /**
-   * Cookie key.
-   */
-  cookieKey?: string;
-
-  /**
    * Sets the policy enforcement mode for this adapter, defaults to {@link PolicyEnforcementMode.PERMISSIVE}.
    */
   policyEnforcement?: PolicyEnforcementMode;
@@ -187,16 +182,6 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
    * Require SSL.
    */
   'ssl-required'?: string;
-
-  /**
-   * Additional OAuth scopes to request (appended to 'openid').
-   */
-  scope?: string;
-
-  /**
-   * Identity provider hint for login redirects.
-   */
-  idpHint?: string;
 }
 
 /**

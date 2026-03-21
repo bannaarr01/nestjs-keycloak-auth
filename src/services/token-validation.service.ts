@@ -1,9 +1,9 @@
 import * as crypto from 'crypto';
-import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
-import { KeycloakToken } from '../token/keycloak-token';
 import { JwksCacheService } from './jwks-cache.service';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { KeycloakToken } from '../token/keycloak-token';
+import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
 import { KeycloakHttpService } from './keycloak-http.service';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 
 @Injectable()
@@ -134,34 +134,17 @@ export class TokenValidationService {
         ? token.content.aud
         : [token.content.aud];
 
-      if (expectedType === 'ID') {
-        // ID tokens always require audience check
-        if (clientId && !audienceData.includes(clientId)) {
-          this.logger.verbose(
-            `invalid token (wrong audience): ${JSON.stringify(token.content.aud)} does not include ${clientId}`,
-          );
-          return false;
-        }
-        // azp must match clientId if present
-        if (token.content.azp && clientId && token.content.azp !== clientId) {
-          this.logger.verbose(
-            'invalid token (authorized party should match client id)',
-          );
-          return false;
-        }
-      } else {
-        // Bearer tokens only check audience if verifyTokenAudience is enabled
-        const verifyAudience =
-          this.keycloakOpts.verifyTokenAudience ??
-          this.keycloakOpts['verify-token-audience'] ??
-          false;
+      // Bearer tokens only check audience if verifyTokenAudience is enabled
+      const verifyAudience =
+        this.keycloakOpts.verifyTokenAudience ??
+        this.keycloakOpts['verify-token-audience'] ??
+        false;
 
-        if (verifyAudience && clientId && !audienceData.includes(clientId)) {
-          this.logger.verbose(
-            `invalid token (wrong audience): ${JSON.stringify(token.content.aud)} does not include ${clientId}`,
-          );
-          return false;
-        }
+      if (verifyAudience && clientId && !audienceData.includes(clientId)) {
+        this.logger.verbose(
+          `invalid token (wrong audience): ${JSON.stringify(token.content.aud)} does not include ${clientId}`,
+        );
+        return false;
       }
 
       // Verify signature

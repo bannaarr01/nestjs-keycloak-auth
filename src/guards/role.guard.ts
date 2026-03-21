@@ -1,10 +1,7 @@
 import { Reflector } from '@nestjs/core';
 import { KeycloakToken } from '../token/keycloak-token';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
-import {
-  extractRequestAndAttachCookie,
-  useTenantConfig,
-} from '../internal.util';
+import { extractRequest, useTenantConfig } from '../internal.util';
 import {
   META_ROLE_MATCHING_MODE,
   META_ROLES,
@@ -20,7 +17,6 @@ import {
 } from '@nestjs/common';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
-  KEYCLOAK_COOKIE_DEFAULT,
   KEYCLOAK_INSTANCE,
   KEYCLOAK_MULTITENANT_SERVICE,
   RoleMatch,
@@ -88,8 +84,7 @@ export class RoleGuard implements CanActivate {
     this.logger.verbose(`Using matching mode: ${roleMatchingMode}`, { roles });
 
     // Extract request
-    const cookieKey = this.keycloakOpts.cookieKey || KEYCLOAK_COOKIE_DEFAULT;
-    const [request] = await extractRequestAndAttachCookie(context, cookieKey);
+    const [request] = extractRequest(context);
 
     // if is not an HTTP request ignore this guard
     if (!request) {

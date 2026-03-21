@@ -3,14 +3,11 @@ import { KeycloakToken } from '../token/keycloak-token';
 import { META_PUBLIC } from '../decorators/public.decorator';
 import { META_RESOURCE } from '../decorators/resource.decorator';
 import { KeycloakHttpService } from '../services/keycloak-http.service';
+import { extractRequest, useTenantConfig } from '../internal.util';
 import { KeycloakPermission } from '../interface/keycloak-grant.interface';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
-import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
 import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
-import {
-  extractRequestAndAttachCookie,
-  useTenantConfig,
-} from '../internal.util';
+import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 import {
@@ -27,7 +24,6 @@ import {
 } from '../decorators/scopes.decorator';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
-  KEYCLOAK_COOKIE_DEFAULT,
   KEYCLOAK_INSTANCE,
   KEYCLOAK_MULTITENANT_SERVICE,
   PolicyEnforcementMode,
@@ -81,8 +77,7 @@ export class ResourceGuard implements CanActivate {
       policyEnforcementMode === PolicyEnforcementMode.PERMISSIVE;
 
     // Extract request/response
-    const cookieKey = this.keycloakOpts.cookieKey || KEYCLOAK_COOKIE_DEFAULT;
-    const [request] = await extractRequestAndAttachCookie(context, cookieKey);
+    const [request] = extractRequest(context);
 
     // if is not an HTTP request ignore this guard
     if (!request) {

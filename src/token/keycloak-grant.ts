@@ -1,13 +1,10 @@
 import { KeycloakToken } from './keycloak-token';
 
 /**
- * Represents a Keycloak grant containing access, refresh, and ID tokens.
- * Matches keycloak-connect's Grant class behavior.
+ * Represents a Keycloak grant containing an access token.
  */
 export class KeycloakGrant {
   access_token: KeycloakToken | undefined;
-  refresh_token: KeycloakToken | undefined;
-  id_token: KeycloakToken | undefined;
   token_type: string | undefined;
   expires_in: number | undefined;
   __raw: string | undefined;
@@ -18,13 +15,9 @@ export class KeycloakGrant {
 
   /**
    * Update this grant in-place given data in another grant.
-   * This is used to avoid making the client perform extra-bookkeeping
-   * to maintain the up-to-date/refreshed grant-set.
    */
   update(grant: Partial<KeycloakGrant>): void {
     this.access_token = grant.access_token;
-    this.refresh_token = grant.refresh_token;
-    this.id_token = grant.id_token;
     this.token_type = grant.token_type;
     this.expires_in = grant.expires_in;
     this.__raw = grant.__raw;

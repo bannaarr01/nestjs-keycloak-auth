@@ -1,15 +1,14 @@
-import { ProxyModule } from './proxy/proxy.module';
+import { HttpModule } from '@nestjs/axios';
 import { JwksCacheService } from './services/jwks-cache.service';
-import { KeycloakUrlService } from './services/keycloak-url.service';
 import { KeycloakHttpService } from './services/keycloak-http.service';
 import { KeycloakGrantService } from './services/keycloak-grant.service';
 import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
 import { TokenValidationService } from './services/token-validation.service';
-import { KeycloakAdminController } from './controllers/keycloak-admin.controller';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_MULTITENANT_SERVICE,
 } from './constants';
+import { KeycloakAdminController } from './controllers/keycloak-admin.controller';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 import {
   createKeycloakConnectOptionProvider,
@@ -74,14 +73,13 @@ export class KeycloakConnectModule {
         useClass: KeycloakMultiTenantService,
       },
       KeycloakHttpService,
-      KeycloakUrlService,
       KeycloakGrantService,
       JwksCacheService,
       TokenValidationService,
     ];
     return {
       module: KeycloakConnectModule,
-      imports: [ProxyModule],
+      imports: [HttpModule],
       controllers: [KeycloakAdminController],
       providers: keycloakConnectProviders,
       exports: keycloakConnectProviders,
@@ -95,7 +93,7 @@ export class KeycloakConnectModule {
 
     return {
       module: KeycloakConnectModule,
-      imports: [...(opts.imports || []), ProxyModule],
+      imports: [...(opts.imports || []), HttpModule],
       controllers: [KeycloakAdminController],
       providers: optsProvider,
       exports: optsProvider,
@@ -114,7 +112,6 @@ export class KeycloakConnectModule {
         useClass: KeycloakMultiTenantService,
       },
       KeycloakHttpService,
-      KeycloakUrlService,
       KeycloakGrantService,
       JwksCacheService,
       TokenValidationService,
