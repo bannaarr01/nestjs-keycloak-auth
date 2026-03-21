@@ -90,12 +90,12 @@ export class RoleGuard implements CanActivate {
     // Extract request
     const cookieKey = this.keycloakOpts.cookieKey || KEYCLOAK_COOKIE_DEFAULT;
     const [request] = await extractRequestAndAttachCookie(context, cookieKey);
-    const { accessToken } = request;
 
     // if is not an HTTP request ignore this guard
     if (!request) {
       return true;
     }
+    const { accessToken } = request;
 
     if (!accessToken) {
       // No access token attached, auth guard should have attached the necessary token

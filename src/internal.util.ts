@@ -21,7 +21,7 @@ export interface KeycloakRequestLike {
  */
 export const useTenantConfig = async (
   request: KeycloakRequestLike,
-  jwt: string,
+  jwt: string | undefined,
   singleTenantConfig: ResolvedTenantConfig,
   multiTenant: KeycloakMultiTenantService,
   opts: KeycloakConnectConfig,
@@ -32,9 +32,20 @@ export const useTenantConfig = async (
       resolvedRealm instanceof Promise ? await resolvedRealm : resolvedRealm;
     return await multiTenant.get(realm, request);
   } else if (!opts.realm) {
-    const payload = parseToken(jwt);
-    const issuerRealm = payload.iss?.split('/').pop();
-    return await multiTenant.get(issuerRealm || '', request);
+    if (!jwt) {
+      return singleTenantConfig;
+    }
+
+    try {
+      const payload = parseToken(jwt);
+      const issuerRealm = payload.iss?.split('/').pop();
+      if (issuerRealm) {
+        return await multiTenant.get(issuerRealm, request);
+      }
+    } catch {
+      // Fall back to the default config when issuer parsing fails.
+      return singleTenantConfig;
+    }
   }
   return singleTenantConfig;
 };
