@@ -6,7 +6,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import * as KeycloakConnect from 'keycloak-connect';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_COOKIE_DEFAULT,
@@ -23,8 +22,15 @@ import {
   META_SCOPES,
 } from '../decorators/scopes.decorator';
 import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
-import { extractRequestAndAttachCookie, useKeycloak } from '../internal.util';
+import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import {
+  extractRequestAndAttachCookie,
+  useTenantConfig,
+} from '../internal.util';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
+import { KeycloakHttpService } from '../services/keycloak-http.service';
+import { KeycloakToken } from '../token/keycloak-token';
 
 /**
  * This adds a resource guard, which is policy enforcement by default is permissive.
@@ -38,30 +44,15 @@ export class ResourceGuard implements CanActivate {
 
   constructor(
     @Inject(KEYCLOAK_INSTANCE)
-    private singleTenant: KeycloakConnect.Keycloak,
+    private singleTenant: ResolvedTenantConfig,
     @Inject(KEYCLOAK_CONNECT_OPTIONS)
     private keycloakOpts: KeycloakConnectConfig,
     @Inject(KEYCLOAK_MULTITENANT_SERVICE)
     private multiTenant: KeycloakMultiTenantService,
+    private keycloakHttp: KeycloakHttpService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const defaultEnforcerOpts: KeycloakConnect.EnforcerOptions = {
-      claims: (request: any) => {
-        const httpUri = request.url;
-        const userAgent = request.headers['user-agent'];
-
-        this.logger.verbose(
-          `Enforcing claims, http.uri: ${httpUri}, user.agent: ${userAgent}`,
-        );
-
-        return {
-          'http.uri': [httpUri],
-          'user.agent': [userAgent],
-        };
-      },
-    };
-
     const resource = this.reflector.get<string>(
       META_RESOURCE,
       context.getClass(),
@@ -76,11 +67,12 @@ export class ResourceGuard implements CanActivate {
       context.getClass(),
       context.getHandler(),
     ]);
-    const enforcerOpts =
-      this.reflector.getAllAndOverride<KeycloakConnect.EnforcerOptions>(
-        META_ENFORCER_OPTIONS,
-        [context.getClass(), context.getHandler()],
-      ) ?? defaultEnforcerOpts;
+    // EnforcerOptions metadata is read but only `claims` was used for logging;
+    // the permission check is now done via UMA grant on the token endpoint.
+    this.reflector.getAllAndOverride<KeycloakEnforcerOptions>(
+      META_ENFORCER_OPTIONS,
+      [context.getClass(), context.getHandler()],
+    );
 
     // Default to permissive
     const policyEnforcementMode =
@@ -90,10 +82,7 @@ export class ResourceGuard implements CanActivate {
 
     // Extract request/response
     const cookieKey = this.keycloakOpts.cookieKey || KEYCLOAK_COOKIE_DEFAULT;
-    const [request, response] = extractRequestAndAttachCookie(
-      context,
-      cookieKey,
-    );
+    const [request] = await extractRequestAndAttachCookie(context, cookieKey);
 
     // if is not an HTTP request ignore this guard
     if (!request) {
@@ -101,11 +90,11 @@ export class ResourceGuard implements CanActivate {
     }
 
     if (!request.user && isPublic) {
-      this.logger.verbose(`Route has no user, and is public, allowed`);
+      this.logger.verbose('Route has no user, and is public, allowed');
       return true;
     }
 
-    const keycloak = await useKeycloak(
+    const tenantConfig = await useTenantConfig(
       request,
       request.accessToken,
       this.singleTenant,
@@ -113,28 +102,28 @@ export class ResourceGuard implements CanActivate {
       this.keycloakOpts,
     );
 
-    const grant = await keycloak.grantManager.createGrant({
-      access_token: request.accessToken,
-    });
-
     // No resource given, check policy enforcement mode
     if (!resource) {
       if (shouldAllow) {
         this.logger.verbose(
-          `Controller has no @Resource defined, request allowed due to policy enforcement`,
+          'Controller has no @Resource defined, request allowed due to policy enforcement',
         );
       } else {
         this.logger.verbose(
-          `Controller has no @Resource defined, request denied due to policy enforcement`,
+          'Controller has no @Resource defined, request denied due to policy enforcement',
         );
       }
       return shouldAllow;
     }
 
     // Build the required scopes
+    let token: KeycloakToken | undefined;
+    if (conditionalScopes != null && conditionalScopes != undefined) {
+      token = new KeycloakToken(request.accessToken, tenantConfig.clientId);
+    }
     const conditionalScopesResult =
       conditionalScopes != null || conditionalScopes != undefined
-        ? conditionalScopes(request, grant.access_token)
+        ? conditionalScopes(request, token)
         : [];
 
     const scopes = [...explicitScopes, ...conditionalScopesResult];
@@ -146,11 +135,11 @@ export class ResourceGuard implements CanActivate {
     if (!scopes || scopes.length === 0) {
       if (shouldAllow) {
         this.logger.verbose(
-          `Route has no @Scope/@ConditionalScopes defined, request allowed due to policy enforcement`,
+          'Route has no @Scope/@ConditionalScopes defined, request allowed due to policy enforcement',
         );
       } else {
         this.logger.verbose(
-          `Route has no @Scope/@ConditionalScopes defined, request denied due to policy enforcement`,
+          'Route has no @Scope/@ConditionalScopes defined, request denied due to policy enforcement',
         );
       }
       return shouldAllow;
@@ -162,11 +151,15 @@ export class ResourceGuard implements CanActivate {
 
     const user = request.user?.preferred_username ?? 'user';
 
-    const enforcerFn = createEnforcerContext(request, response, enforcerOpts);
-
     // Build permissions
     const permissions = scopes.map((scope) => `${resource}:${scope}`);
-    const isAllowed = await enforcerFn(keycloak, permissions);
+    const isAllowed = await this.keycloakHttp.checkPermission(
+      tenantConfig.realmUrl,
+      tenantConfig.clientId,
+      tenantConfig.secret,
+      request.accessToken,
+      permissions,
+    );
 
     // If statement for verbose logging only
     if (!isAllowed) {
@@ -178,18 +171,3 @@ export class ResourceGuard implements CanActivate {
     return isAllowed;
   }
 }
-
-const createEnforcerContext =
-  (request: any, response: any, options?: KeycloakConnect.EnforcerOptions) =>
-  (keycloak: KeycloakConnect.Keycloak, permissions: string[]) =>
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    new Promise<boolean>((resolve, _) =>
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      keycloak.enforcer(permissions, options)(request, response, (_: any) => {
-        if (request.resourceDenied) {
-          resolve(false);
-        } else {
-          resolve(true);
-        }
-      }),
-    );

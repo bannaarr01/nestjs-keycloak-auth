@@ -17,16 +17,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         name: Checkout
-      - uses: pnpm/action-setup@v3
-        name: Install pnpm
-        with:
-          run_install: true
       - uses: actions/setup-node@v4
         name: Install Node.js
         with:
           node-version-file: '.nvmrc'
-          cache: 'pnpm'
-      - run: pnpm run --if-present lint
+          cache: 'npm'
+      - run: npm ci
+        name: Install dependencies
+      - run: npm run lint --if-present
         name: Lint
-      - run: pnpm run --if-present build
+      - run: npm run build --if-present
         name: Build

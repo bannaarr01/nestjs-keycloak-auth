@@ -1,6 +1,5 @@
 import { Provider } from '@nestjs/common';
 import * as fs from 'fs';
-import KeycloakConnect from 'keycloak-connect';
 import * as path from 'path';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
@@ -12,32 +11,47 @@ import {
   KeycloakConnectOptions,
   NestKeycloakConfig,
 } from './interface/keycloak-connect-options.interface';
+import { ResolvedTenantConfig } from './interface/tenant-config.interface';
 import { KeycloakConnectModule } from './keycloak-connect.module';
+
+/**
+ * Resolves a KeycloakConnectConfig into a ResolvedTenantConfig.
+ */
+const resolveConfig = (opts: KeycloakConnectConfig): ResolvedTenantConfig => {
+  const authServerUrl =
+    opts.authServerUrl ||
+    opts['auth-server-url'] ||
+    opts.serverUrl ||
+    opts['server-url'] ||
+    '';
+  const realm = opts.realm || '';
+  const clientId = opts.clientId || opts['client-id'] || opts.resource || '';
+  const secret =
+    opts.secret || (opts.credentials && opts.credentials.secret) || '';
+  const realmUrl = realm
+    ? `${authServerUrl.replace(/\/$/, '')}/realms/${realm}`
+    : authServerUrl;
+
+  return { authServerUrl, realm, clientId, secret, realmUrl };
+};
 
 export const keycloakProvider: Provider = {
   provide: KEYCLOAK_INSTANCE,
-  useFactory: (opts: KeycloakConnectOptions) => {
-    const keycloakOpts: any = opts;
-    const keycloak: any = new KeycloakConnect({}, keycloakOpts);
-
-    // Warn if using token validation none
-    if (
-      typeof opts !== 'string' &&
-      opts.tokenValidation &&
-      opts.tokenValidation === TokenValidation.NONE
-    ) {
-      KeycloakConnectModule.logger.warn(
-        `Token validation is disabled, please only do this on development/special use-cases.`,
+  useFactory: (opts: KeycloakConnectOptions): ResolvedTenantConfig => {
+    if (typeof opts === 'string') {
+      throw new Error(
+        'Keycloak configuration should have been parsed by this point.',
       );
     }
 
-    // Access denied is called, add a flag to request so our resource guard knows
-    keycloak.accessDenied = (req: any, res: any, next: any) => {
-      req.resourceDenied = true;
-      next();
-    };
+    // Warn if using token validation none
+    if (opts.tokenValidation && opts.tokenValidation === TokenValidation.NONE) {
+      KeycloakConnectModule.logger.warn(
+        'Token validation is disabled, please only do this on development/special use-cases.',
+      );
+    }
 
-    return keycloak;
+    return resolveConfig(opts);
   },
   inject: [KEYCLOAK_CONNECT_OPTIONS],
 };

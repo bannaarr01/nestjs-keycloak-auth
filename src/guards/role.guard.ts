@@ -6,7 +6,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import * as KeycloakConnect from 'keycloak-connect';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_COOKIE_DEFAULT,
@@ -20,8 +19,13 @@ import {
   META_ROLES,
 } from '../decorators/roles.decorator';
 import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
-import { extractRequestAndAttachCookie, useKeycloak } from '../internal.util';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import {
+  extractRequestAndAttachCookie,
+  useTenantConfig,
+} from '../internal.util';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
+import { KeycloakToken } from '../token/keycloak-token';
 
 /**
  * A permissive type of role guard. Roles are set via `@Roles` decorator.
@@ -34,7 +38,7 @@ export class RoleGuard implements CanActivate {
 
   constructor(
     @Inject(KEYCLOAK_INSTANCE)
-    private singleTenant: KeycloakConnect.Keycloak,
+    private singleTenant: ResolvedTenantConfig,
     @Inject(KEYCLOAK_CONNECT_OPTIONS)
     private keycloakOpts: KeycloakConnectConfig,
     @Inject(KEYCLOAK_MULTITENANT_SERVICE)
@@ -85,7 +89,7 @@ export class RoleGuard implements CanActivate {
 
     // Extract request
     const cookieKey = this.keycloakOpts.cookieKey || KEYCLOAK_COOKIE_DEFAULT;
-    const [request] = extractRequestAndAttachCookie(context, cookieKey);
+    const [request] = await extractRequestAndAttachCookie(context, cookieKey);
     const { accessToken } = request;
 
     // if is not an HTTP request ignore this guard
@@ -101,31 +105,28 @@ export class RoleGuard implements CanActivate {
       return false;
     }
 
-    // Create grant
-    const keycloak = await useKeycloak(
+    // Resolve tenant config to get clientId
+    const tenantConfig = await useTenantConfig(
       request,
-      request.accessToken,
+      accessToken,
       this.singleTenant,
       this.multiTenant,
       this.keycloakOpts,
     );
-    const grant = await keycloak.grantManager.createGrant({
-      access_token: accessToken,
-    });
 
-    // Grab access token from grant
-    const grantAccessToken: KeycloakConnect.Token = grant.access_token as any;
+    // Use native KeycloakToken for role checking — pure in-memory, no HTTP
+    const token = new KeycloakToken(accessToken, tenantConfig.clientId);
 
     // For verbose logging, we store it instead of returning it immediately
     const granted =
       roleMatchingMode === RoleMatch.ANY
-        ? roles.some((r) => grantAccessToken.hasRole(r))
-        : roles.every((r) => grantAccessToken.hasRole(r));
+        ? roles.some((r) => token.hasRole(r))
+        : roles.every((r) => token.hasRole(r));
 
     if (granted) {
-      this.logger.verbose(`Resource granted due to role(s)`);
+      this.logger.verbose('Resource granted due to role(s)');
     } else {
-      this.logger.verbose(`Resource denied due to mismatched role(s)`);
+      this.logger.verbose('Resource denied due to mismatched role(s)');
     }
 
     return granted;

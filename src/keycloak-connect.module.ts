@@ -14,6 +14,10 @@ import {
   keycloakProvider,
 } from './keycloak-connect.providers';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
+import { KeycloakHttpService } from './services/keycloak-http.service';
+import { JwksCacheService } from './services/jwks-cache.service';
+import { TokenValidationService } from './services/token-validation.service';
+import { ProxyModule } from './proxy/proxy.module';
 
 export * from './constants';
 export * from './decorators/access-token.decorator';
@@ -29,7 +33,14 @@ export * from './guards/role.guard';
 export * from './interface/keycloak-connect-module-async-options.interface';
 export * from './interface/keycloak-connect-options-factory.interface';
 export * from './interface/keycloak-connect-options.interface';
+export * from './interface/tenant-config.interface';
+export * from './interface/enforcer-options.interface';
+export * from './interface/jwks.interface';
 export * from './services/keycloak-multitenant.service';
+export * from './services/keycloak-http.service';
+export * from './services/jwks-cache.service';
+export * from './services/token-validation.service';
+export * from './token/keycloak-token';
 export * from './util';
 
 @Module({})
@@ -54,9 +65,13 @@ export class KeycloakConnectModule {
         provide: KEYCLOAK_MULTITENANT_SERVICE,
         useClass: KeycloakMultiTenantService,
       },
+      KeycloakHttpService,
+      JwksCacheService,
+      TokenValidationService,
     ];
     return {
       module: KeycloakConnectModule,
+      imports: [ProxyModule],
       providers: keycloakConnectProviders,
       exports: keycloakConnectProviders,
     };
@@ -69,7 +84,7 @@ export class KeycloakConnectModule {
 
     return {
       module: KeycloakConnectModule,
-      imports: opts.imports || [],
+      imports: [...(opts.imports || []), ProxyModule],
       providers: optsProvider,
       exports: optsProvider,
     };
@@ -86,6 +101,9 @@ export class KeycloakConnectModule {
         provide: KEYCLOAK_MULTITENANT_SERVICE,
         useClass: KeycloakMultiTenantService,
       },
+      KeycloakHttpService,
+      JwksCacheService,
+      TokenValidationService,
     ];
 
     if (options.useExisting || options.useFactory) {

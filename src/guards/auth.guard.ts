@@ -7,7 +7,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import * as KeycloakConnect from 'keycloak-connect';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_COOKIE_DEFAULT,
@@ -17,8 +16,13 @@ import {
 } from '../constants';
 import { META_PUBLIC } from '../decorators/public.decorator';
 import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
-import { extractRequestAndAttachCookie, useKeycloak } from '../internal.util';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import {
+  extractRequestAndAttachCookie,
+  useTenantConfig,
+} from '../internal.util';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
+import { TokenValidationService } from '../services/token-validation.service';
 import { parseToken } from '../util';
 
 /**
@@ -32,11 +36,12 @@ export class AuthGuard implements CanActivate {
 
   constructor(
     @Inject(KEYCLOAK_INSTANCE)
-    private singleTenant: KeycloakConnect.Keycloak,
+    private singleTenant: ResolvedTenantConfig,
     @Inject(KEYCLOAK_CONNECT_OPTIONS)
     private keycloakOpts: KeycloakConnectConfig,
     @Inject(KEYCLOAK_MULTITENANT_SERVICE)
     private multiTenant: KeycloakMultiTenantService,
+    private tokenValidation: TokenValidationService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -47,7 +52,7 @@ export class AuthGuard implements CanActivate {
 
     // Extract request/response
     const cookieKey = this.keycloakOpts.cookieKey || KEYCLOAK_COOKIE_DEFAULT;
-    const [request] = extractRequestAndAttachCookie(context, cookieKey);
+    const [request] = await extractRequestAndAttachCookie(context, cookieKey);
 
     // if is not an HTTP request ignore this guard
     if (!request) {
@@ -68,16 +73,16 @@ export class AuthGuard implements CanActivate {
       return true;
     }
 
-    this.logger.verbose(`Validating jwt`, { jwt });
+    this.logger.verbose('Validating jwt', { jwt });
 
-    const keycloak = await useKeycloak(
+    const tenantConfig = await useTenantConfig(
       request,
       jwt,
       this.singleTenant,
       this.multiTenant,
       this.keycloakOpts,
     );
-    const isValidToken = await this.validateToken(keycloak, jwt);
+    const isValidToken = await this.validateToken(tenantConfig, jwt);
 
     if (isValidToken) {
       // Attach user info object
@@ -85,13 +90,13 @@ export class AuthGuard implements CanActivate {
       // Attach raw access token JWT extracted from bearer/cookie
       request.accessToken = jwt;
 
-      this.logger.verbose(`User authenticated`, { user: request.user });
+      this.logger.verbose('User authenticated', { user: request.user });
       return true;
     }
 
     // Valid token should return, this time we warn
     if (isPublic) {
-      this.logger.warn(`A jwt token was retrieved but failed validation.`, {
+      this.logger.warn('A jwt token was retrieved but failed validation.', {
         jwt,
       });
       return true;
@@ -100,41 +105,34 @@ export class AuthGuard implements CanActivate {
     throw new UnauthorizedException();
   }
 
-  private async validateToken(keycloak: KeycloakConnect.Keycloak, jwt: any) {
-    const tokenValidation =
+  private async validateToken(tenantConfig: ResolvedTenantConfig, jwt: string) {
+    const tokenValidationMethod =
       this.keycloakOpts.tokenValidation || TokenValidation.ONLINE;
 
-    const gm = keycloak.grantManager;
-    let grant: KeycloakConnect.Grant;
-
-    try {
-      grant = await gm.createGrant({ access_token: jwt });
-    } catch (ex) {
-      this.logger.warn(`Cannot validate access token: ${ex}`);
-      // It will fail to create grants on invalid access token (i.e expired or wrong domain)
-      return false;
-    }
-
-    const token = grant.access_token;
-
     this.logger.verbose(
-      `Using token validation method: ${tokenValidation.toUpperCase()}`,
+      `Using token validation method: ${tokenValidationMethod.toUpperCase()}`,
     );
 
     try {
-      let result: boolean | KeycloakConnect.Token;
-
-      switch (tokenValidation) {
+      switch (tokenValidationMethod) {
         case TokenValidation.ONLINE:
-          result = await gm.validateAccessToken(token);
-          return result === token;
+          return await this.tokenValidation.validateOnline(
+            jwt,
+            tenantConfig.realmUrl,
+            tenantConfig.clientId,
+            tenantConfig.secret,
+          );
         case TokenValidation.OFFLINE:
-          result = await gm.validateToken(token, 'Bearer');
-          return result === token;
+          return await this.tokenValidation.validateOffline(
+            jwt,
+            tenantConfig.realmUrl,
+          );
         case TokenValidation.NONE:
           return true;
         default:
-          this.logger.warn(`Unknown validation method: ${tokenValidation}`);
+          this.logger.warn(
+            `Unknown validation method: ${tokenValidationMethod}`,
+          );
           return false;
       }
     } catch (ex) {
@@ -146,7 +144,7 @@ export class AuthGuard implements CanActivate {
 
   private extractJwt(headers: { [key: string]: string }) {
     if (headers && !headers.authorization) {
-      this.logger.verbose(`No authorization header`);
+      this.logger.verbose('No authorization header');
       return null;
     }
 
@@ -154,7 +152,7 @@ export class AuthGuard implements CanActivate {
 
     // We only allow bearer
     if (auth[0].toLowerCase() !== 'bearer') {
-      this.logger.verbose(`No bearer header`);
+      this.logger.verbose('No bearer header');
       return null;
     }
 

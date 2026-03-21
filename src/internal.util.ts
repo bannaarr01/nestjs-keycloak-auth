@@ -1,18 +1,21 @@
 import { ContextType, ExecutionContext } from '@nestjs/common';
-import KeycloakConnect from 'keycloak-connect';
 import { KeycloakConnectConfig } from './interface/keycloak-connect-options.interface';
+import { ResolvedTenantConfig } from './interface/tenant-config.interface';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 import { parseToken } from './util';
 
-// Confusing and all, but I needed to extract this fn to avoid more repeating code
-// TODO: Rework in 2.0
-export const useKeycloak = async (
+/**
+ * Resolves the tenant configuration for the current request.
+ * For multi-tenant: uses the realm resolver or extracts realm from JWT issuer.
+ * For single-tenant: returns the provided default config.
+ */
+export const useTenantConfig = async (
   request: any,
   jwt: string,
-  singleTenant: KeycloakConnect.Keycloak,
+  singleTenantConfig: ResolvedTenantConfig,
   multiTenant: KeycloakMultiTenantService,
   opts: KeycloakConnectConfig,
-): Promise<KeycloakConnect.Keycloak> => {
+): Promise<ResolvedTenantConfig> => {
   if (opts.multiTenant && opts.multiTenant.realmResolver) {
     const resolvedRealm = opts.multiTenant.realmResolver(request);
     const realm =
@@ -23,7 +26,7 @@ export const useKeycloak = async (
     const issuerRealm = payload.iss.split('/').pop();
     return await multiTenant.get(issuerRealm, request);
   }
-  return singleTenant;
+  return singleTenantConfig;
 };
 
 export const attachCookieToHeader = (request: any, cookieKey: string) => {
@@ -37,6 +40,16 @@ export const attachCookieToHeader = (request: any, cookieKey: string) => {
 
 type GqlContextType = 'graphql' | ContextType;
 
+// Cached dynamic import for @nestjs/graphql
+let gqlModule: any;
+
+const loadGqlModule = async () => {
+  if (!gqlModule) {
+    gqlModule = await import('@nestjs/graphql');
+  }
+  return gqlModule;
+};
+
 export const extractRequest = (context: ExecutionContext): [any, any] => {
   let request: any, response: any;
 
@@ -48,16 +61,15 @@ export const extractRequest = (context: ExecutionContext): [any, any] => {
     request = httpContext.getRequest();
     response = httpContext.getResponse();
   } else if (context.getType<GqlContextType>() === 'graphql') {
-    let gql: any;
-    // Check if graphql is installed
-    try {
-      gql = require('@nestjs/graphql');
-    } catch (er) {
-      throw new Error('@nestjs/graphql is not installed, cannot proceed');
+    if (!gqlModule) {
+      throw new Error(
+        '@nestjs/graphql is not loaded yet. Ensure the module is imported before handling GraphQL requests.',
+      );
     }
 
     // graphql request
-    const gqlContext = gql.GqlExecutionContext.create(context).getContext();
+    const gqlContext =
+      gqlModule.GqlExecutionContext.create(context).getContext();
 
     request = gqlContext.req;
     response = gqlContext.res;
@@ -66,11 +78,24 @@ export const extractRequest = (context: ExecutionContext): [any, any] => {
   return [request, response];
 };
 
-export const extractRequestAndAttachCookie = (
+export const extractRequestAsync = async (
+  context: ExecutionContext,
+): Promise<[any, any]> => {
+  if (context.getType<GqlContextType>() === 'graphql') {
+    try {
+      await loadGqlModule();
+    } catch {
+      throw new Error('@nestjs/graphql is not installed, cannot proceed');
+    }
+  }
+  return extractRequest(context);
+};
+
+export const extractRequestAndAttachCookie = async (
   context: ExecutionContext,
   cookieKey: string,
 ) => {
-  const [tmpRequest, response] = extractRequest(context);
+  const [tmpRequest, response] = await extractRequestAsync(context);
   const request = attachCookieToHeader(tmpRequest, cookieKey);
 
   return [request, response];

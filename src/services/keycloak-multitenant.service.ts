@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import KeycloakConnect from 'keycloak-connect';
 import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
 import { KeycloakConnectOptions } from '../interface/keycloak-connect-options.interface';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 
 /**
- * Stores all keycloak instances when multi tenant option is defined.
+ * Stores resolved tenant configurations for multi-tenant scenarios.
  */
 @Injectable()
 export class KeycloakMultiTenantService {
-  private instances: Map<string, KeycloakConnect.Keycloak> = new Map();
+  private configs: Map<string, ResolvedTenantConfig> = new Map();
 
   constructor(
     @Inject(KEYCLOAK_CONNECT_OPTIONS)
@@ -16,22 +16,22 @@ export class KeycloakMultiTenantService {
   ) {}
 
   /**
-   * Clears the cached Keycloak instances.
+   * Clears the cached tenant configurations.
    */
   clear() {
-    this.instances.clear();
+    this.configs.clear();
   }
 
   /**
-   * Retrieves a keycloak instance based on the realm provided.
+   * Retrieves a resolved tenant config based on the realm provided.
    * @param realm the realm to retrieve from
    * @param request the request instance, defaults to undefined
-   * @returns the multi tenant keycloak instance
+   * @returns the resolved tenant configuration
    */
   async get(
     realm: string,
     request: any = undefined,
-  ): Promise<KeycloakConnect.Keycloak> {
+  ): Promise<ResolvedTenantConfig> {
     if (typeof this.keycloakOpts === 'string') {
       throw new Error(
         'Keycloak configuration is a configuration path. This should not happen after module load.',
@@ -52,31 +52,23 @@ export class KeycloakMultiTenantService {
 
     // Check if existing
     if (
-      this.instances.has(realm) &&
+      this.configs.has(realm) &&
       !this.keycloakOpts.multiTenant.resolveAlways
     ) {
-      // Otherwise return the instance
-      return this.instances.get(realm);
+      return this.configs.get(realm);
     } else {
-      // TODO: Repeating code from  provider, will need to rework this in 2.0
-      // Override realm, secret, and authServerUrl
-      const keycloakOpts: any = Object.assign(this.keycloakOpts, {
+      const realmUrl = `${authServerUrl.replace(/\/$/, '')}/realms/${realm}`;
+
+      const config: ResolvedTenantConfig = {
         authServerUrl,
         realm,
-        secret,
         clientId,
-      });
-      const keycloak: any = new KeycloakConnect({}, keycloakOpts);
-
-      // The most important part
-      keycloak.accessDenied = (req: any, res: any, next: any) => {
-        req.resourceDenied = true;
-        next();
+        secret,
+        realmUrl,
       };
 
-      // Save instance
-      this.instances.set(realm, keycloak);
-      return keycloak;
+      this.configs.set(realm, config);
+      return config;
     }
   }
 

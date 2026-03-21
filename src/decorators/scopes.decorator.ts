@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import * as KeycloakConnect from 'keycloak-connect';
+import { KeycloakToken } from '../token/keycloak-token';
 
 export const META_SCOPES = 'scopes';
 
@@ -7,7 +7,7 @@ export const META_CONDITIONAL_SCOPES = 'conditional-scopes';
 
 export type ConditionalScopeFn = (
   request: any,
-  token: KeycloakConnect.Token,
+  token: KeycloakToken,
 ) => string[];
 
 /**
