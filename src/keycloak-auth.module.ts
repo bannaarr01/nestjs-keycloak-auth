@@ -1,8 +1,8 @@
 import { HttpModule } from '@nestjs/axios';
 import { JwksCacheService } from './services/jwks-cache.service';
-import { OidcDiscoveryService } from './services/oidc-discovery.service';
 import { KeycloakHttpService } from './services/keycloak-http.service';
 import { KeycloakGrantService } from './services/keycloak-grant.service';
+import { OidcDiscoveryService } from './services/oidc-discovery.service';
 import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
 import { TokenValidationService } from './services/token-validation.service';
 import {

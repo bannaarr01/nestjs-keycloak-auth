@@ -1,15 +1,10 @@
-import {
-  KEYCLOAK_INSTANCE,
-  KEYCLOAK_AUTH_OPTIONS,
-  KEYCLOAK_MULTITENANT_SERVICE,
-} from '../constants';
 import * as crypto from 'crypto';
 import { KeycloakToken } from '../token/keycloak-token';
 import { JwksCacheService } from '../services/jwks-cache.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { TokenValidationService } from '../services/token-validation.service';
-import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
+import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import {
   Body,
   Controller,
@@ -20,6 +15,11 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import {
+  KEYCLOAK_INSTANCE,
+  KEYCLOAK_AUTH_OPTIONS,
+  KEYCLOAK_MULTITENANT_SERVICE,
+} from '../constants';
 
 interface ServerResponse {
   status(code: number): ServerResponse;

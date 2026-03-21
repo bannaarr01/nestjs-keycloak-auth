@@ -2,14 +2,14 @@ import { Reflector } from '@nestjs/core';
 import { KeycloakToken } from '../token/keycloak-token';
 import { META_PUBLIC } from '../decorators/public.decorator';
 import { META_RESOURCE } from '../decorators/resource.decorator';
-import { KeycloakHttpService } from '../services/keycloak-http.service';
 import { extractRequest, useTenantConfig } from '../internal.util';
+import { KeycloakHttpService } from '../services/keycloak-http.service';
 import { KeycloakPermission } from '../interface/keycloak-grant.interface';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
-import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
 import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
-import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
+import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
+import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import {
   CanActivate,
   ExecutionContext,

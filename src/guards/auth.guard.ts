@@ -1,12 +1,12 @@
 import { parseToken } from '../util';
 import { Reflector } from '@nestjs/core';
 import { META_PUBLIC } from '../decorators/public.decorator';
+import { extractRequest, useTenantConfig } from '../internal.util';
 import { KeycloakGrantService } from '../services/keycloak-grant.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
-import { extractRequest, useTenantConfig } from '../internal.util';
 import { TokenValidationService } from '../services/token-validation.service';
-import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
+import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import {
   CanActivate,
   ExecutionContext,

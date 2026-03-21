@@ -1,6 +1,6 @@
 import { firstValueFrom } from 'rxjs';
-import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Discovered OIDC endpoint URLs from .well-known/openid-configuration.

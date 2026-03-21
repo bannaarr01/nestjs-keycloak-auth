@@ -1,6 +1,6 @@
+import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
 import { KeycloakGrant } from '../token/keycloak-grant';
 import { KeycloakToken } from '../token/keycloak-token';
-import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { TokenValidationService } from './token-validation.service';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';

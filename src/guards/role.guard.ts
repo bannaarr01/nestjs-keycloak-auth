@@ -1,13 +1,13 @@
 import { Reflector } from '@nestjs/core';
 import { KeycloakToken } from '../token/keycloak-token';
-import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { extractRequest, useTenantConfig } from '../internal.util';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import {
   META_ROLE_MATCHING_MODE,
   META_ROLES,
 } from '../decorators/roles.decorator';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
-import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import {
   CanActivate,
   ExecutionContext,

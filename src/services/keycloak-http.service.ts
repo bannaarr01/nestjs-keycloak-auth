@@ -1,8 +1,8 @@
 import { firstValueFrom } from 'rxjs';
-import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { OidcDiscoveryService } from './oidc-discovery.service';
+import { Injectable } from '@nestjs/common';
 import { JwksResponse } from '../interface/jwks.interface';
+import { OidcDiscoveryService } from './oidc-discovery.service';
 import {
   KeycloakGrantResponse,
   KeycloakPermission,
