@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
-import { KeycloakHttpService } from './keycloak-http.service';
-import { JwksCacheService } from './jwks-cache.service';
+import { Injectable, Logger } from '@nestjs/common';
 import { KeycloakToken } from '../token/keycloak-token';
+import { JwksCacheService } from './jwks-cache.service';
+import { KeycloakHttpService } from './keycloak-http.service';
 
 @Injectable()
 export class TokenValidationService {

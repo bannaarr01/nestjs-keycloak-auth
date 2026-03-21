@@ -1,3 +1,16 @@
+import { Reflector } from '@nestjs/core';
+import { KeycloakToken } from '../token/keycloak-token';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import {
+  extractRequestAndAttachCookie,
+  useTenantConfig,
+} from '../internal.util';
+import {
+  META_ROLE_MATCHING_MODE,
+  META_ROLES,
+} from '../decorators/roles.decorator';
+import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
+import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 import {
   CanActivate,
   ExecutionContext,
@@ -5,7 +18,6 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_COOKIE_DEFAULT,
@@ -14,18 +26,6 @@ import {
   RoleMatch,
   RoleMerge,
 } from '../constants';
-import {
-  META_ROLE_MATCHING_MODE,
-  META_ROLES,
-} from '../decorators/roles.decorator';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
-import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
-import {
-  extractRequestAndAttachCookie,
-  useTenantConfig,
-} from '../internal.util';
-import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
-import { KeycloakToken } from '../token/keycloak-token';
 
 /**
  * A permissive type of role guard. Roles are set via `@Roles` decorator.

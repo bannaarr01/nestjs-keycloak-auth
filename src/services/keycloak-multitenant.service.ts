@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
-import { KeycloakConnectOptions } from '../interface/keycloak-connect-options.interface';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import { KeycloakConnectOptions } from '../interface/keycloak-connect-options.interface';
 
 /**
  * Stores resolved tenant configurations for multi-tenant scenarios.

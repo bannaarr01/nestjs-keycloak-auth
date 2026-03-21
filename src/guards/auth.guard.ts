@@ -1,3 +1,14 @@
+import { parseToken } from '../util';
+import { Reflector } from '@nestjs/core';
+import { META_PUBLIC } from '../decorators/public.decorator';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import { TokenValidationService } from '../services/token-validation.service';
+import {
+  extractRequestAndAttachCookie,
+  useTenantConfig,
+} from '../internal.util';
+import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
+import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 import {
   CanActivate,
   ExecutionContext,
@@ -6,7 +17,6 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_COOKIE_DEFAULT,
@@ -14,16 +24,6 @@ import {
   KEYCLOAK_MULTITENANT_SERVICE,
   TokenValidation,
 } from '../constants';
-import { META_PUBLIC } from '../decorators/public.decorator';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
-import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
-import {
-  extractRequestAndAttachCookie,
-  useTenantConfig,
-} from '../internal.util';
-import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
-import { TokenValidationService } from '../services/token-validation.service';
-import { parseToken } from '../util';
 
 /**
  * An authentication guard. Will return a 401 unauthorized when it is unable to

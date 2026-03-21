@@ -1,5 +1,10 @@
-import { SetMetadata } from '@nestjs/common';
+import { extractRequest } from '../internal.util';
 import { KeycloakToken } from '../token/keycloak-token';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  SetMetadata,
+} from '@nestjs/common';
 
 export const META_SCOPES = 'scopes';
 
@@ -22,9 +27,6 @@ export const Scopes = (...scopes: string[]) => SetMetadata(META_SCOPES, scopes);
  */
 export const ConditionalScopes = (resolver: ConditionalScopeFn) =>
   SetMetadata(META_CONDITIONAL_SCOPES, resolver);
-
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { extractRequest } from '../internal.util';
 
 /**
  * Retrieves the resolved scopes.

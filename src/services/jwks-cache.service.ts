@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { Injectable, Logger } from '@nestjs/common';
 import { KeycloakHttpService } from './keycloak-http.service';
 import { CachedJwks, JwksKey } from '../interface/jwks.interface';
 

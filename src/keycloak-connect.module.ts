@@ -1,23 +1,23 @@
+import { ProxyModule } from './proxy/proxy.module';
+import { JwksCacheService } from './services/jwks-cache.service';
+import { KeycloakHttpService } from './services/keycloak-http.service';
 import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
+import { TokenValidationService } from './services/token-validation.service';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_MULTITENANT_SERVICE,
 } from './constants';
-import { KeycloakConnectModuleAsyncOptions } from './interface/keycloak-connect-module-async-options.interface';
+import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
+import {
+  createKeycloakConnectOptionProvider,
+  keycloakProvider,
+} from './keycloak-connect.providers';
 import { KeycloakConnectOptionsFactory } from './interface/keycloak-connect-options-factory.interface';
 import {
   KeycloakConnectOptions,
   NestKeycloakConfig,
 } from './interface/keycloak-connect-options.interface';
-import {
-  createKeycloakConnectOptionProvider,
-  keycloakProvider,
-} from './keycloak-connect.providers';
-import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
-import { KeycloakHttpService } from './services/keycloak-http.service';
-import { JwksCacheService } from './services/jwks-cache.service';
-import { TokenValidationService } from './services/token-validation.service';
-import { ProxyModule } from './proxy/proxy.module';
+import { KeycloakConnectModuleAsyncOptions } from './interface/keycloak-connect-module-async-options.interface';
 
 export * from './constants';
 export * from './decorators/access-token.decorator';

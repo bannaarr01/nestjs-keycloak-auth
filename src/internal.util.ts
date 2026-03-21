@@ -1,8 +1,8 @@
+import { parseToken } from './util';
 import { ContextType, ExecutionContext } from '@nestjs/common';
-import { KeycloakConnectConfig } from './interface/keycloak-connect-options.interface';
 import { ResolvedTenantConfig } from './interface/tenant-config.interface';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
-import { parseToken } from './util';
+import { KeycloakConnectConfig } from './interface/keycloak-connect-options.interface';
 
 /**
  * Resolves the tenant configuration for the current request.

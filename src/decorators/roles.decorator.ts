@@ -1,5 +1,5 @@
-import { SetMetadata } from '@nestjs/common';
 import { RoleMatch } from '../constants';
+import { SetMetadata } from '@nestjs/common';
 
 export const META_ROLES = 'roles';
 export const META_ROLE_MATCHING_MODE = 'role-matching-mode';

@@ -1,3 +1,17 @@
+import { Reflector } from '@nestjs/core';
+import { KeycloakToken } from '../token/keycloak-token';
+import { META_PUBLIC } from '../decorators/public.decorator';
+import { META_RESOURCE } from '../decorators/resource.decorator';
+import { KeycloakHttpService } from '../services/keycloak-http.service';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
+import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
+import {
+  extractRequestAndAttachCookie,
+  useTenantConfig,
+} from '../internal.util';
+import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
+import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 import {
   CanActivate,
   ExecutionContext,
@@ -5,7 +19,11 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import {
+  ConditionalScopeFn,
+  META_CONDITIONAL_SCOPES,
+  META_SCOPES,
+} from '../decorators/scopes.decorator';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_COOKIE_DEFAULT,
@@ -13,24 +31,6 @@ import {
   KEYCLOAK_MULTITENANT_SERVICE,
   PolicyEnforcementMode,
 } from '../constants';
-import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
-import { META_PUBLIC } from '../decorators/public.decorator';
-import { META_RESOURCE } from '../decorators/resource.decorator';
-import {
-  ConditionalScopeFn,
-  META_CONDITIONAL_SCOPES,
-  META_SCOPES,
-} from '../decorators/scopes.decorator';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
-import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
-import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
-import {
-  extractRequestAndAttachCookie,
-  useTenantConfig,
-} from '../internal.util';
-import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
-import { KeycloakHttpService } from '../services/keycloak-http.service';
-import { KeycloakToken } from '../token/keycloak-token';
 
 /**
  * This adds a resource guard, which is policy enforcement by default is permissive.

@@ -2,10 +2,10 @@ import { firstValueFrom } from 'rxjs';
 import { randomUUID } from 'node:crypto';
 import { HttpService } from '@nestjs/axios';
 import { RequestOptions } from './types/request.types';
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ProxyConfigService } from './proxy-config.service';
 import { ProxyServiceConfig } from './interfaces/proxy-config.interface';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class ProxyService {

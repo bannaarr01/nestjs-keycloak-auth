@@ -1,7 +1,7 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ProxyService } from '../proxy/proxy.service';
-import { ProxyConfigService } from '../proxy/proxy-config.service';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { JwksResponse } from '../interface/jwks.interface';
+import { ProxyConfigService } from '../proxy/proxy-config.service';
 
 const KEYCLOAK_SERVICE = 'keycloak';
 

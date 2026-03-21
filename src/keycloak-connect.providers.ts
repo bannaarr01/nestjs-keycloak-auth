@@ -1,6 +1,8 @@
-import { Provider } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Provider } from '@nestjs/common';
+import { KeycloakConnectModule } from './keycloak-connect.module';
+import { ResolvedTenantConfig } from './interface/tenant-config.interface';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_INSTANCE,
@@ -11,8 +13,6 @@ import {
   KeycloakConnectOptions,
   NestKeycloakConfig,
 } from './interface/keycloak-connect-options.interface';
-import { ResolvedTenantConfig } from './interface/tenant-config.interface';
-import { KeycloakConnectModule } from './keycloak-connect.module';
 
 /**
  * Resolves a KeycloakConnectConfig into a ResolvedTenantConfig.
