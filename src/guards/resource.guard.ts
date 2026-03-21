@@ -175,7 +175,10 @@ export class ResourceGuard implements CanActivate {
 
     // Server-side permission check
     const claims = enforcerOptions?.claims?.(request);
-    const responseMode = enforcerOptions?.response_mode;
+    const responseMode = enforcerOptions?.response_mode ?? 'permissions';
+    const audience =
+      enforcerOptions?.resource_server_id ?? tenantConfig.clientId;
+    const isPublicClient = tenantConfig.isPublic;
 
     if (responseMode === 'permissions') {
       // Permissions mode: get permission list from server, validate locally
@@ -189,6 +192,8 @@ export class ResourceGuard implements CanActivate {
           {
             claims: claims || undefined,
             response_mode: 'permissions',
+            audience,
+            isPublic: isPublicClient,
           },
         )) as KeycloakPermission[];
 
@@ -228,6 +233,8 @@ export class ResourceGuard implements CanActivate {
           {
             claims: claims || undefined,
             response_mode: 'token',
+            audience,
+            isPublic: isPublicClient,
           },
         )) as { access_token: string };
 
@@ -262,7 +269,12 @@ export class ResourceGuard implements CanActivate {
       tenantConfig.secret,
       request.accessToken,
       permissions,
-      claims ? { claims } : undefined,
+      {
+        claims: claims || undefined,
+        response_mode: 'decision',
+        audience,
+        isPublic: isPublicClient,
+      },
     )) as boolean;
 
     // If statement for verbose logging only

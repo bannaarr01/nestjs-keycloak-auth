@@ -230,6 +230,7 @@ export class KeycloakHttpService implements OnModuleInit {
   ): Promise<boolean | KeycloakPermission[] | KeycloakGrantResponse> {
     const responseMode = options?.response_mode || 'decision';
     const audience = options?.audience || clientId;
+    const isPublic = options?.isPublic ?? false;
 
     const params = new URLSearchParams({
       grant_type: 'urn:ietf:params:oauth:grant-type:uma-ticket',
@@ -256,9 +257,20 @@ export class KeycloakHttpService implements OnModuleInit {
 
     if (options?.subject_token) {
       params.set('subject_token', options.subject_token);
+    } else if (!isPublic) {
+      // Confidential clients send the user bearer as subject_token.
+      params.set('subject_token', accessToken);
     }
 
     try {
+      const headers = isPublic
+        ? {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Client': 'keycloak-nodejs-connect',
+          }
+        : this.buildAuthHeaders(clientId, secret, false);
+
       const result = await this.proxyService.executeRequest<
         Record<string, unknown>
       >(
@@ -267,11 +279,7 @@ export class KeycloakHttpService implements OnModuleInit {
         'POST',
         {
           data: params.toString(),
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Client': 'keycloak-nodejs-connect',
-          },
+          headers,
         },
         realmUrl,
       );

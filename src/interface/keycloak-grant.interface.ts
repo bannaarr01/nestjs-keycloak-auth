@@ -26,6 +26,7 @@ export interface PermissionCheckOptions {
   response_mode?: 'decision' | 'permissions' | 'token';
   audience?: string;
   subject_token?: string;
+  isPublic?: boolean;
 }
 
 export interface KeycloakPermission {
