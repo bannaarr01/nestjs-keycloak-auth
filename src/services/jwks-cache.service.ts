@@ -1,15 +1,30 @@
 import * as crypto from 'crypto';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { KeycloakHttpService } from './keycloak-http.service';
+import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
 import { CachedJwks, JwksKey } from '../interface/jwks.interface';
+import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 
 @Injectable()
 export class JwksCacheService {
   private readonly logger = new Logger(JwksCacheService.name);
   private readonly cache = new Map<string, CachedJwks>();
-  private minTimeBetweenRequestsMs = 10000; // 10 seconds default
+  private minTimeBetweenRequestsMs: number;
 
-  constructor(private readonly keycloakHttp: KeycloakHttpService) {}
+  constructor(
+    @Inject(KEYCLOAK_CONNECT_OPTIONS)
+    keycloakOpts: KeycloakConnectConfig,
+    private readonly keycloakHttp: KeycloakHttpService,
+  ) {
+    // Wire minTimeBetweenJwksRequests from config.
+    // Original keycloak-connect uses seconds (default 10);
+    // we convert to milliseconds internally.
+    const configValue =
+      keycloakOpts.minTimeBetweenJwksRequests ??
+      keycloakOpts['min-time-between-jwks-requests'];
+    this.minTimeBetweenRequestsMs =
+      configValue != null ? configValue * 1000 : 10000;
+  }
 
   /**
    * Set the minimum time between JWKS requests (for rate limiting).
@@ -53,6 +68,13 @@ export class JwksCacheService {
       key: jwk as crypto.JsonWebKey,
       format: 'jwk',
     });
+  }
+
+  /**
+   * Clear all cached JWKS keys. Matches keycloak-connect Rotation.clearCache().
+   */
+  clearCache(): void {
+    this.cache.clear();
   }
 
   private async fetchAndCache(realmUrl: string): Promise<CachedJwks> {

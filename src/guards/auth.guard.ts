@@ -126,6 +126,7 @@ export class AuthGuard implements CanActivate {
           return await this.tokenValidation.validateOffline(
             jwt,
             tenantConfig.realmUrl,
+            tenantConfig.clientId,
           );
         case TokenValidation.NONE:
           return true;

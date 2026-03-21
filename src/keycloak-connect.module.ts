@@ -1,8 +1,11 @@
 import { ProxyModule } from './proxy/proxy.module';
 import { JwksCacheService } from './services/jwks-cache.service';
+import { KeycloakUrlService } from './services/keycloak-url.service';
 import { KeycloakHttpService } from './services/keycloak-http.service';
+import { KeycloakGrantService } from './services/keycloak-grant.service';
 import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
 import { TokenValidationService } from './services/token-validation.service';
+import { KeycloakAdminController } from './controllers/keycloak-admin.controller';
 import {
   KEYCLOAK_CONNECT_OPTIONS,
   KEYCLOAK_MULTITENANT_SERVICE,
@@ -36,11 +39,16 @@ export * from './interface/keycloak-connect-options.interface';
 export * from './interface/tenant-config.interface';
 export * from './interface/enforcer-options.interface';
 export * from './interface/jwks.interface';
+export * from './interface/keycloak-grant.interface';
 export * from './services/keycloak-multitenant.service';
 export * from './services/keycloak-http.service';
+export * from './services/keycloak-url.service';
+export * from './services/keycloak-grant.service';
 export * from './services/jwks-cache.service';
 export * from './services/token-validation.service';
+export * from './controllers/keycloak-admin.controller';
 export * from './token/keycloak-token';
+export * from './token/keycloak-grant';
 export * from './util';
 
 @Module({})
@@ -66,12 +74,15 @@ export class KeycloakConnectModule {
         useClass: KeycloakMultiTenantService,
       },
       KeycloakHttpService,
+      KeycloakUrlService,
+      KeycloakGrantService,
       JwksCacheService,
       TokenValidationService,
     ];
     return {
       module: KeycloakConnectModule,
       imports: [ProxyModule],
+      controllers: [KeycloakAdminController],
       providers: keycloakConnectProviders,
       exports: keycloakConnectProviders,
     };
@@ -85,6 +96,7 @@ export class KeycloakConnectModule {
     return {
       module: KeycloakConnectModule,
       imports: [...(opts.imports || []), ProxyModule],
+      controllers: [KeycloakAdminController],
       providers: optsProvider,
       exports: optsProvider,
     };
@@ -102,6 +114,8 @@ export class KeycloakConnectModule {
         useClass: KeycloakMultiTenantService,
       },
       KeycloakHttpService,
+      KeycloakUrlService,
+      KeycloakGrantService,
       JwksCacheService,
       TokenValidationService,
     ];

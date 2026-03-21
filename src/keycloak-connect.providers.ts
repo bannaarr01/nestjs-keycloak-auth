@@ -15,24 +15,69 @@ import {
 } from './interface/keycloak-connect-options.interface';
 
 /**
+ * Resolve environment variable references in config values.
+ * Matches keycloak-connect config.js resolveValue() logic.
+ * Supports: ${env.MY_VAR} and ${env.MY_VAR:fallback}
+ */
+function resolveValue(value: unknown): any {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const regex = /\$\{env\.([^:]*):?(.*)?\}/;
+  if (!regex.test(value)) {
+    return value;
+  }
+
+  const tokens = value.replace(regex, '$1--split--$2').split('--split--');
+  const envVar = tokens[0];
+  const envVal = process.env[envVar];
+  const fallbackVal = tokens[1];
+
+  return envVal || fallbackVal;
+}
+
+/**
  * Resolves a KeycloakConnectConfig into a ResolvedTenantConfig.
  */
 const resolveConfig = (opts: KeycloakConnectConfig): ResolvedTenantConfig => {
-  const authServerUrl =
-    opts.authServerUrl ||
-    opts['auth-server-url'] ||
-    opts.serverUrl ||
-    opts['server-url'] ||
-    '';
-  const realm = opts.realm || '';
-  const clientId = opts.clientId || opts['client-id'] || opts.resource || '';
-  const secret =
-    opts.secret || (opts.credentials && opts.credentials.secret) || '';
-  const realmUrl = realm
-    ? `${authServerUrl.replace(/\/$/, '')}/realms/${realm}`
+  const authServerUrl = (
+    resolveValue(
+      opts.authServerUrl ||
+        opts['auth-server-url'] ||
+        opts.serverUrl ||
+        opts['server-url'] ||
+        '',
+    ) as string
+  ).replace(/\/+$/, '');
+  const realm = resolveValue(opts.realm || '') as string;
+  const clientId = resolveValue(
+    opts.clientId || opts['client-id'] || opts.resource || '',
+  ) as string;
+  const secret = resolveValue(
+    opts.secret || (opts.credentials && opts.credentials.secret) || '',
+  ) as string;
+  const realmUrl = realm ? `${authServerUrl}/realms/${realm}` : authServerUrl;
+  const realmAdminUrl = realm
+    ? `${authServerUrl}/admin/realms/${realm}`
     : authServerUrl;
+  const isPublic = !!resolveValue(
+    opts['public-client'] ?? opts.public ?? false,
+  );
+  const bearerOnly = !!resolveValue(
+    opts['bearer-only'] ?? opts.bearerOnly ?? false,
+  );
 
-  return { authServerUrl, realm, clientId, secret, realmUrl };
+  return {
+    authServerUrl,
+    realm,
+    clientId,
+    secret,
+    realmUrl,
+    realmAdminUrl,
+    isPublic,
+    bearerOnly,
+  };
 };
 
 export const keycloakProvider: Provider = {

@@ -67,12 +67,11 @@ export class ResourceGuard implements CanActivate {
       context.getClass(),
       context.getHandler(),
     ]);
-    // EnforcerOptions metadata is read but only `claims` was used for logging;
-    // the permission check is now done via UMA grant on the token endpoint.
-    this.reflector.getAllAndOverride<KeycloakEnforcerOptions>(
-      META_ENFORCER_OPTIONS,
-      [context.getClass(), context.getHandler()],
-    );
+    const enforcerOptions =
+      this.reflector.getAllAndOverride<KeycloakEnforcerOptions>(
+        META_ENFORCER_OPTIONS,
+        [context.getClass(), context.getHandler()],
+      );
 
     // Default to permissive
     const policyEnforcementMode =
@@ -151,15 +150,119 @@ export class ResourceGuard implements CanActivate {
 
     const user = request.user?.preferred_username ?? 'user';
 
-    // Build permissions
+    // Build permissions as "resource:scope" pairs
     const permissions = scopes.map((scope) => `${resource}:${scope}`);
-    const isAllowed = await this.keycloakHttp.checkPermission(
+
+    // Local permission check: if the access token already contains the
+    // required permissions, allow immediately without a server round-trip
+    // (matches keycloak-connect enforcer.js behavior)
+    if (request.accessToken) {
+      const accessToken =
+        token ?? new KeycloakToken(request.accessToken, tenantConfig.clientId);
+
+      const allPermissionsGranted = scopes.every((scope) =>
+        accessToken.hasPermission(resource, scope),
+      );
+
+      if (allPermissionsGranted) {
+        this.logger.verbose(
+          `Resource [ ${resource} ] granted to [ ${user} ] (local token check)`,
+        );
+        return true;
+      }
+    }
+
+    // Server-side permission check
+    const claims = enforcerOptions?.claims?.(request);
+    const responseMode = enforcerOptions?.response_mode;
+
+    if (responseMode === 'permissions') {
+      // Permissions mode: get permission list from server, validate locally
+      try {
+        const serverPermissions = (await this.keycloakHttp.checkPermission(
+          tenantConfig.realmUrl,
+          tenantConfig.clientId,
+          tenantConfig.secret,
+          request.accessToken,
+          permissions,
+          {
+            claims: claims || undefined,
+            response_mode: 'permissions',
+          },
+        )) as any[];
+
+        const isAllowed = this.validatePermissionsLocally(
+          serverPermissions,
+          resource,
+          scopes,
+        );
+
+        if (isAllowed) {
+          // Attach permissions to request (matches original enforcer.js)
+          request.permissions = serverPermissions;
+          this.logger.verbose(
+            `Resource [ ${resource} ] granted to [ ${user} ]`,
+          );
+        } else {
+          this.logger.verbose(`Resource [ ${resource} ] denied to [ ${user} ]`);
+        }
+        return isAllowed;
+      } catch {
+        this.logger.verbose(
+          `Resource [ ${resource} ] denied to [ ${user} ] (permissions check failed)`,
+        );
+        return false;
+      }
+    }
+
+    if (responseMode === 'token') {
+      // Token mode: get a new grant with permissions, validate locally
+      try {
+        const grant = (await this.keycloakHttp.checkPermission(
+          tenantConfig.realmUrl,
+          tenantConfig.clientId,
+          tenantConfig.secret,
+          request.accessToken,
+          permissions,
+          {
+            claims: claims || undefined,
+            response_mode: 'token',
+          },
+        )) as { access_token: string };
+
+        const grantToken = new KeycloakToken(
+          grant.access_token,
+          tenantConfig.clientId,
+        );
+        const isAllowed = scopes.every((scope) =>
+          grantToken.hasPermission(resource, scope),
+        );
+
+        if (isAllowed) {
+          this.logger.verbose(
+            `Resource [ ${resource} ] granted to [ ${user} ]`,
+          );
+        } else {
+          this.logger.verbose(`Resource [ ${resource} ] denied to [ ${user} ]`);
+        }
+        return isAllowed;
+      } catch {
+        this.logger.verbose(
+          `Resource [ ${resource} ] denied to [ ${user} ] (token check failed)`,
+        );
+        return false;
+      }
+    }
+
+    // Default: decision mode
+    const isAllowed = (await this.keycloakHttp.checkPermission(
       tenantConfig.realmUrl,
       tenantConfig.clientId,
       tenantConfig.secret,
       request.accessToken,
       permissions,
-    );
+      claims ? { claims } : undefined,
+    )) as boolean;
 
     // If statement for verbose logging only
     if (!isAllowed) {
@@ -169,5 +272,46 @@ export class ResourceGuard implements CanActivate {
     }
 
     return isAllowed;
+  }
+
+  /**
+   * Validate server-returned permissions against expected resource:scope pairs.
+   * Matches keycloak-connect enforcer.js handlePermissions logic.
+   */
+  private validatePermissionsLocally(
+    serverPermissions: any[],
+    resource: string,
+    scopes: string[],
+  ): boolean {
+    if (!serverPermissions || serverPermissions.length === 0) {
+      return false;
+    }
+
+    for (const scope of scopes) {
+      let found = false;
+
+      for (const permission of serverPermissions) {
+        if (permission.rsid === resource || permission.rsname === resource) {
+          if (scope) {
+            if (permission.scopes && permission.scopes.length > 0) {
+              if (!permission.scopes.includes(scope)) {
+                return false;
+              }
+              found = true;
+              break;
+            }
+            return false;
+          }
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

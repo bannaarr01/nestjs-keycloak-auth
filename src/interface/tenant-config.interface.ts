@@ -7,4 +7,7 @@ export interface ResolvedTenantConfig {
   clientId: string;
   secret: string;
   realmUrl: string;
+  realmAdminUrl: string;
+  isPublic: boolean;
+  bearerOnly: boolean;
 }

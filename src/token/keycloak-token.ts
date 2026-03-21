@@ -9,22 +9,31 @@ export class KeycloakToken {
   readonly signed: string;
 
   constructor(
-    private readonly token: string,
+    private readonly _token: string,
     private readonly clientId?: string,
   ) {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      throw new Error('Invalid JWT: expected 3 parts');
+    if (_token) {
+      try {
+        const parts = _token.split('.');
+        this.header = JSON.parse(
+          Buffer.from(parts[0], 'base64').toString('utf8'),
+        );
+        this.content = JSON.parse(
+          Buffer.from(parts[1], 'base64').toString('utf8'),
+        );
+        this.signature = Buffer.from(parts[2], 'base64');
+        this.signed = `${parts[0]}.${parts[1]}`;
+      } catch {
+        this.content = { exp: 0 };
+      }
     }
+  }
 
-    this.header = JSON.parse(
-      Buffer.from(parts[0], 'base64url').toString('utf8'),
-    );
-    this.content = JSON.parse(
-      Buffer.from(parts[1], 'base64url').toString('utf8'),
-    );
-    this.signature = Buffer.from(parts[2], 'base64url');
-    this.signed = `${parts[0]}.${parts[1]}`;
+  /**
+   * The raw JWT string. Matches keycloak-connect's `token.token` property.
+   */
+  get token(): string {
+    return this._token;
   }
 
   /**
@@ -35,6 +44,10 @@ export class KeycloakToken {
    * - "roleName" checks resource_access[this.clientId].roles
    */
   hasRole(name: string): boolean {
+    if (!this.clientId) {
+      return false;
+    }
+
     const parts = name.split(':');
 
     if (parts.length === 1) {
@@ -54,10 +67,10 @@ export class KeycloakToken {
    */
   hasRealmRole(roleName: string): boolean {
     const realmAccess = this.content.realm_access;
-    if (!realmAccess || !Array.isArray(realmAccess.roles)) {
+    if (!realmAccess || !realmAccess.roles) {
       return false;
     }
-    return realmAccess.roles.includes(roleName);
+    return realmAccess.roles.indexOf(roleName) >= 0;
   }
 
   /**
@@ -68,47 +81,61 @@ export class KeycloakToken {
     if (!resourceAccess) {
       return false;
     }
-    const clientAccess = resourceAccess[clientId];
-    if (!clientAccess || !Array.isArray(clientAccess.roles)) {
+    const appRoles = resourceAccess[clientId];
+    if (!appRoles) {
       return false;
     }
-    return clientAccess.roles.includes(roleName);
+    return appRoles.roles.indexOf(roleName) >= 0;
   }
 
   /**
    * Check if the token has a specific permission (for UMA/resource server).
+   * Matches keycloak-connect's Token.hasPermission() semantics:
+   * - If matching resource found with no scope requested, returns true.
+   * - If matching resource found with scope requested and scopes array
+   *   exists with entries but does NOT include the scope, returns false.
+   * - If matching resource found with scope requested and scopes array
+   *   is empty or absent, returns true (permission is granted without scope restriction).
    */
   hasPermission(resource: string, scope?: string): boolean {
-    const authorization = this.content.authorization;
-    if (!authorization || !Array.isArray(authorization.permissions)) {
+    const permissions = this.content.authorization
+      ? this.content.authorization.permissions
+      : undefined;
+
+    if (!permissions) {
       return false;
     }
-    return authorization.permissions.some((perm: any) => {
-      if (perm.rsname !== resource && perm.rsid !== resource) {
-        return false;
-      }
-      if (!scope) {
+
+    for (let i = 0; i < permissions.length; i++) {
+      const permission = permissions[i];
+
+      if (permission.rsid === resource || permission.rsname === resource) {
+        if (scope) {
+          if (permission.scopes && permission.scopes.length > 0) {
+            if (!permission.scopes.includes(scope)) {
+              return false;
+            }
+          }
+        }
         return true;
       }
-      return Array.isArray(perm.scopes) && perm.scopes.includes(scope);
-    });
+    }
+
+    return false;
   }
 
   /**
    * Check if the token is expired.
+   * Matches keycloak-connect's behavior: exp=0 is considered expired.
    */
   isExpired(): boolean {
-    const exp = this.content.exp;
-    if (!exp) {
-      return false;
-    }
-    return Math.floor(Date.now() / 1000) >= exp;
+    return this.content.exp * 1000 < Date.now();
   }
 
   /**
    * Get the raw JWT string.
    */
   toString(): string {
-    return this.token;
+    return this._token;
   }
 }

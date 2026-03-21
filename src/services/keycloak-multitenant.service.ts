@@ -59,12 +59,31 @@ export class KeycloakMultiTenantService {
     } else {
       const realmUrl = `${authServerUrl.replace(/\/$/, '')}/realms/${realm}`;
 
+      const realmAdminUrl = `${authServerUrl.replace(/\/$/, '')}/admin/realms/${realm}`;
+      const isPublic =
+        typeof this.keycloakOpts !== 'string' &&
+        !!(
+          this.keycloakOpts['public-client'] ??
+          this.keycloakOpts.public ??
+          false
+        );
+      const bearerOnly =
+        typeof this.keycloakOpts !== 'string' &&
+        !!(
+          this.keycloakOpts['bearer-only'] ??
+          this.keycloakOpts.bearerOnly ??
+          false
+        );
+
       const config: ResolvedTenantConfig = {
         authServerUrl,
         realm,
         clientId,
         secret,
         realmUrl,
+        realmAdminUrl,
+        isPublic,
+        bearerOnly,
       };
 
       this.configs.set(realm, config);

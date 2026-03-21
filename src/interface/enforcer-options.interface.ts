@@ -3,5 +3,6 @@
  */
 export interface KeycloakEnforcerOptions {
   response_mode?: 'permissions' | 'token';
-  claims?: (request: any) => Record<string, string[]>;
+  resource_server_id?: string;
+  claims?: (request: any) => Record<string, unknown>;
 }
