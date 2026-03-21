@@ -35,8 +35,8 @@ export class KeycloakUrlService {
       this.keycloakOpts.resource ||
       '';
 
-    const scope = (this.keycloakOpts as any).scope
-      ? `openid ${(this.keycloakOpts as any).scope}`
+    const scope = this.keycloakOpts.scope
+      ? `openid ${this.keycloakOpts.scope}`
       : 'openid';
 
     let url =
@@ -52,7 +52,7 @@ export class KeycloakUrlService {
       encodeURIComponent(scope) +
       '&response_type=code';
 
-    const idpHint = (this.keycloakOpts as any).idpHint;
+    const idpHint = this.keycloakOpts.idpHint;
     if (idpHint) {
       url += '&kc_idp_hint=' + encodeURIComponent(idpHint);
     }

@@ -1,6 +1,6 @@
-import { KeycloakToken } from '../token/keycloak-token';
-import { KeycloakGrant } from '../token/keycloak-grant';
 import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
+import { KeycloakGrant } from '../token/keycloak-grant';
+import { KeycloakToken } from '../token/keycloak-token';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { KeycloakHttpService } from './keycloak-http.service';
 import { TokenValidationService } from './token-validation.service';
@@ -40,27 +40,28 @@ export class KeycloakGrantService {
    * Matches keycloak-connect GrantManager.createGrant().
    */
   async createGrant(
-    rawData: string | Record<string, any>,
+    rawData: string | Record<string, unknown>,
     realmUrl: string,
     clientId?: string,
     secret?: string,
   ): Promise<KeycloakGrant> {
-    const grantData =
-      typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+    const grantData = (
+      typeof rawData === 'string' ? JSON.parse(rawData) : rawData
+    ) as Record<string, unknown>;
     const cId = clientId || this.clientId;
 
     const grant = new KeycloakGrant({
       access_token: grantData.access_token
-        ? new KeycloakToken(grantData.access_token, cId)
+        ? new KeycloakToken(grantData.access_token as string, cId)
         : undefined,
       refresh_token: grantData.refresh_token
-        ? new KeycloakToken(grantData.refresh_token)
+        ? new KeycloakToken(grantData.refresh_token as string)
         : undefined,
       id_token: grantData.id_token
-        ? new KeycloakToken(grantData.id_token)
+        ? new KeycloakToken(grantData.id_token as string)
         : undefined,
-      expires_in: grantData.expires_in,
-      token_type: grantData.token_type,
+      expires_in: grantData.expires_in as number | undefined,
+      token_type: grantData.token_type as string | undefined,
       __raw: typeof rawData === 'string' ? rawData : JSON.stringify(rawData),
     });
 

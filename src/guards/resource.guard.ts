@@ -3,6 +3,7 @@ import { KeycloakToken } from '../token/keycloak-token';
 import { META_PUBLIC } from '../decorators/public.decorator';
 import { META_RESOURCE } from '../decorators/resource.decorator';
 import { KeycloakHttpService } from '../services/keycloak-http.service';
+import { KeycloakPermission } from '../interface/keycloak-grant.interface';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
 import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
@@ -189,7 +190,7 @@ export class ResourceGuard implements CanActivate {
             claims: claims || undefined,
             response_mode: 'permissions',
           },
-        )) as any[];
+        )) as KeycloakPermission[];
 
         const isAllowed = this.validatePermissionsLocally(
           serverPermissions,
@@ -279,7 +280,7 @@ export class ResourceGuard implements CanActivate {
    * Matches keycloak-connect enforcer.js handlePermissions logic.
    */
   private validatePermissionsLocally(
-    serverPermissions: any[],
+    serverPermissions: KeycloakPermission[],
     resource: string,
     scopes: string[],
   ): boolean {

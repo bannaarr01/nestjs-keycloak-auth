@@ -19,7 +19,7 @@ import {
  * Matches keycloak-connect config.js resolveValue() logic.
  * Supports: ${env.MY_VAR} and ${env.MY_VAR:fallback}
  */
-function resolveValue(value: unknown): any {
+function resolveValue(value: unknown): unknown {
   if (typeof value !== 'string') {
     return value;
   }

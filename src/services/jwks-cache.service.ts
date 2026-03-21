@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
+import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { KeycloakHttpService } from './keycloak-http.service';
-import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
 import { CachedJwks, JwksKey } from '../interface/jwks.interface';
 import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
 

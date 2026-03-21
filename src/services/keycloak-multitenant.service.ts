@@ -30,7 +30,7 @@ export class KeycloakMultiTenantService {
    */
   async get(
     realm: string,
-    request: any = undefined,
+    request: unknown = undefined,
   ): Promise<ResolvedTenantConfig> {
     if (typeof this.keycloakOpts === 'string') {
       throw new Error(
@@ -93,7 +93,7 @@ export class KeycloakMultiTenantService {
 
   async resolveAuthServerUrl(
     realm: string,
-    request: any = undefined,
+    request: unknown = undefined,
   ): Promise<string> {
     if (typeof this.keycloakOpts === 'string') {
       throw new Error(
@@ -140,7 +140,7 @@ export class KeycloakMultiTenantService {
 
   async resolveClientId(
     realm: string,
-    request: any = undefined,
+    request: unknown = undefined,
   ): Promise<string> {
     if (typeof this.keycloakOpts === 'string') {
       throw new Error(
@@ -180,7 +180,7 @@ export class KeycloakMultiTenantService {
 
   async resolveSecret(
     realm: string,
-    request: any = undefined,
+    request: unknown = undefined,
   ): Promise<string> {
     if (typeof this.keycloakOpts === 'string') {
       throw new Error(

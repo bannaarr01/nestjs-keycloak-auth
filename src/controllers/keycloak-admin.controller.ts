@@ -13,6 +13,12 @@ import {
   Res,
 } from '@nestjs/common';
 
+interface ServerResponse {
+  status(code: number): ServerResponse;
+  end(data?: string): void;
+  send(data: string): void;
+}
+
 /**
  * Handles Keycloak admin callbacks (k_logout and k_push_not_before).
  * Matches keycloak-connect's admin.js middleware behavior.
@@ -34,7 +40,7 @@ export class KeycloakAdminController {
 
   @Post('k_logout')
   @HttpCode(200)
-  async handleLogout(@Body() body: string, @Res() response: any) {
+  async handleLogout(@Body() body: string, @Res() response: ServerResponse) {
     try {
       const token = new KeycloakToken(body);
       if (!token.signed) {
@@ -63,7 +69,10 @@ export class KeycloakAdminController {
 
   @Post('k_push_not_before')
   @HttpCode(200)
-  async handlePushNotBefore(@Body() body: string, @Res() response: any) {
+  async handlePushNotBefore(
+    @Body() body: string,
+    @Res() response: ServerResponse,
+  ) {
     try {
       const token = new KeycloakToken(body);
       if (!token.signed) {

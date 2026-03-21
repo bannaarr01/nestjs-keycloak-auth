@@ -19,27 +19,27 @@ export interface MultiTenantOptions {
   /**
    * The realm resolver function.
    */
-  realmResolver: (request: any) => Promise<string> | string;
+  realmResolver: (request: unknown) => Promise<string> | string;
   /**
    * The realm secret resolver function.
    */
   realmSecretResolver?: (
     realm: string,
-    request?: any,
+    request?: unknown,
   ) => Promise<string> | string;
   /**
    * The realm auth server url resolver function.
    */
   realmAuthServerUrlResolver?: (
     realm: string,
-    request?: any,
+    request?: unknown,
   ) => Promise<string> | string;
   /**
    * The realm client id resolver function.
    */
   realmClientIdResolver: (
     realm: string,
-    request?: any,
+    request?: unknown,
   ) => Promise<string> | string;
 }
 
@@ -187,6 +187,16 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
    * Require SSL.
    */
   'ssl-required'?: string;
+
+  /**
+   * Additional OAuth scopes to request (appended to 'openid').
+   */
+  scope?: string;
+
+  /**
+   * Identity provider hint for login redirects.
+   */
+  idpHint?: string;
 }
 
 /**

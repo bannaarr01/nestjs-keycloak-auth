@@ -143,13 +143,14 @@ export class AuthGuard implements CanActivate {
     return false;
   }
 
-  private extractJwt(headers: { [key: string]: string }) {
-    if (headers && !headers.authorization) {
+  private extractJwt(headers: Record<string, string | string[] | undefined>) {
+    const authorization = headers?.authorization;
+    if (!authorization || typeof authorization !== 'string') {
       this.logger.verbose('No authorization header');
       return null;
     }
 
-    const auth = headers.authorization.split(' ');
+    const auth = authorization.split(' ');
 
     // We only allow bearer
     if (auth[0].toLowerCase() !== 'bearer') {

@@ -2,7 +2,7 @@ import { firstValueFrom } from 'rxjs';
 import { randomUUID } from 'node:crypto';
 import { HttpService } from '@nestjs/axios';
 import { RequestOptions } from './types/request.types';
-import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ProxyConfigService } from './proxy-config.service';
 import { ProxyServiceConfig } from './interfaces/proxy-config.interface';
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
@@ -83,7 +83,8 @@ export class ProxyService {
         throw error;
       }
       this.logger.error((error as Error)?.message || 'Proxy request failed');
-      const status = (error as any)?.response?.status || HttpStatus.BAD_GATEWAY;
+      const status =
+        (error as AxiosError)?.response?.status || HttpStatus.BAD_GATEWAY;
       throw new HttpException(
         (error as Error)?.message || 'Proxy request failed',
         status,

@@ -259,7 +259,9 @@ export class KeycloakHttpService implements OnModuleInit {
     }
 
     try {
-      const result = await this.proxyService.executeRequest<any>(
+      const result = await this.proxyService.executeRequest<
+        Record<string, unknown>
+      >(
         KEYCLOAK_SERVICE,
         'token',
         'POST',
@@ -279,7 +281,10 @@ export class KeycloakHttpService implements OnModuleInit {
       }
 
       // 'permissions' and 'token' modes return the raw response
-      return result;
+      if (responseMode === 'permissions') {
+        return result as unknown as KeycloakPermission[];
+      }
+      return result as unknown as KeycloakGrantResponse;
     } catch {
       if (responseMode === 'decision') {
         return false;

@@ -4,13 +4,23 @@ import { ResolvedTenantConfig } from './interface/tenant-config.interface';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 import { KeycloakConnectConfig } from './interface/keycloak-connect-options.interface';
 
+export interface KeycloakRequestLike {
+  headers: Record<string, string | string[] | undefined>;
+  cookies?: Record<string, string>;
+  user?: Record<string, unknown>;
+  accessToken?: string;
+  scopes?: string[];
+  permissions?: unknown[];
+  [key: string]: unknown;
+}
+
 /**
  * Resolves the tenant configuration for the current request.
  * For multi-tenant: uses the realm resolver or extracts realm from JWT issuer.
  * For single-tenant: returns the provided default config.
  */
 export const useTenantConfig = async (
-  request: any,
+  request: KeycloakRequestLike,
   jwt: string,
   singleTenantConfig: ResolvedTenantConfig,
   multiTenant: KeycloakMultiTenantService,
@@ -23,13 +33,16 @@ export const useTenantConfig = async (
     return await multiTenant.get(realm, request);
   } else if (!opts.realm) {
     const payload = parseToken(jwt);
-    const issuerRealm = payload.iss.split('/').pop();
-    return await multiTenant.get(issuerRealm, request);
+    const issuerRealm = payload.iss?.split('/').pop();
+    return await multiTenant.get(issuerRealm || '', request);
   }
   return singleTenantConfig;
 };
 
-export const attachCookieToHeader = (request: any, cookieKey: string) => {
+export const attachCookieToHeader = (
+  request: KeycloakRequestLike,
+  cookieKey: string,
+): KeycloakRequestLike => {
   // Attach cookie as authorization header
   if (request && request.cookies && request.cookies[cookieKey]) {
     request.headers.authorization = `Bearer ${request.cookies[cookieKey]}`;
@@ -40,25 +53,36 @@ export const attachCookieToHeader = (request: any, cookieKey: string) => {
 
 type GqlContextType = 'graphql' | ContextType;
 
+interface GqlModuleShape {
+  GqlExecutionContext: {
+    create(ctx: ExecutionContext): {
+      getContext(): { req: KeycloakRequestLike; res: unknown };
+    };
+  };
+}
+
 // Cached dynamic import for @nestjs/graphql
-let gqlModule: any;
+let gqlModule: GqlModuleShape | undefined;
 
 const loadGqlModule = async () => {
   if (!gqlModule) {
-    gqlModule = await import('@nestjs/graphql');
+    gqlModule = (await import('@nestjs/graphql')) as unknown as GqlModuleShape;
   }
   return gqlModule;
 };
 
-export const extractRequest = (context: ExecutionContext): [any, any] => {
-  let request: any, response: any;
+export const extractRequest = (
+  context: ExecutionContext,
+): [KeycloakRequestLike | undefined, unknown] => {
+  let request: KeycloakRequestLike | undefined;
+  let response: unknown;
 
   // Check if request is coming from graphql or http
   if (context.getType() === 'http') {
     // http request
     const httpContext = context.switchToHttp();
 
-    request = httpContext.getRequest();
+    request = httpContext.getRequest() as KeycloakRequestLike;
     response = httpContext.getResponse();
   } else if (context.getType<GqlContextType>() === 'graphql') {
     if (!gqlModule) {
@@ -80,7 +104,7 @@ export const extractRequest = (context: ExecutionContext): [any, any] => {
 
 export const extractRequestAsync = async (
   context: ExecutionContext,
-): Promise<[any, any]> => {
+): Promise<[KeycloakRequestLike | undefined, unknown]> => {
   if (context.getType<GqlContextType>() === 'graphql') {
     try {
       await loadGqlModule();
@@ -96,7 +120,9 @@ export const extractRequestAndAttachCookie = async (
   cookieKey: string,
 ) => {
   const [tmpRequest, response] = await extractRequestAsync(context);
-  const request = attachCookieToHeader(tmpRequest, cookieKey);
+  const request = tmpRequest
+    ? attachCookieToHeader(tmpRequest, cookieKey)
+    : undefined;
 
-  return [request, response];
+  return [request, response] as const;
 };

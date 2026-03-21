@@ -11,7 +11,7 @@ export const META_SCOPES = 'scopes';
 export const META_CONDITIONAL_SCOPES = 'conditional-scopes';
 
 export type ConditionalScopeFn = (
-  request: any,
+  request: unknown,
   token: KeycloakToken,
 ) => string[];
 
