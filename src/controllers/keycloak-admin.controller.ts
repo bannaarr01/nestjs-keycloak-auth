@@ -1,6 +1,7 @@
 import { KeycloakAdminError } from '../errors';
 import { KeycloakAdminService } from '../services/keycloak-admin.service';
 import { ServerRequest, ServerResponse } from '../interface/server.interface';
+import { Public } from '../decorators/public.decorator';
 import {
    Body,
    Controller,
@@ -18,6 +19,7 @@ import {
  *
  * All business logic is delegated to {@link KeycloakAdminService}.
  */
+@Public()
 @Controller()
 export class KeycloakAdminController {
    private readonly logger = new Logger(KeycloakAdminController.name);
@@ -37,7 +39,7 @@ export class KeycloakAdminController {
       } catch (err) {
          this.logger.warn(`Push not-before failed: ${err}`);
          const status = err instanceof KeycloakAdminError ? 401 : 400;
-         response.status(status).end(status === 401 ? 'unauthorized' : 'bad request');
+         response.status(status).send(status === 401 ? 'unauthorized' : 'bad request');
       }
    }
 
@@ -54,7 +56,7 @@ export class KeycloakAdminController {
      } catch (err) {
         this.logger.warn(`Back-channel logout failed: ${err}`);
         const status = err instanceof KeycloakAdminError ? 401 : 400;
-        response.status(status).end(status === 401 ? 'unauthorized' : 'bad request');
+        response.status(status).send(status === 401 ? 'unauthorized' : 'bad request');
      }
   }
 }

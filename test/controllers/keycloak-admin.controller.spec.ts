@@ -8,7 +8,6 @@ type TestResponse = ServerResponse & {
    code?: number;
    data?: unknown;
    status: jest.Mock;
-   end: jest.Mock;
    send: jest.Mock;
 };
 
@@ -22,16 +21,12 @@ const makeResponse = (): TestResponse => {
       code: undefined,
       data: undefined,
       status: jest.fn(),
-      end: jest.fn(),
       send: jest.fn(),
    } as unknown as TestResponse;
 
    response.status.mockImplementation((code: number) => {
       response.code = code;
       return response;
-   });
-   response.end.mockImplementation((data?: unknown) => {
-      response.data = data;
    });
    response.send.mockImplementation((data: unknown) => {
       response.data = data;
@@ -73,7 +68,7 @@ describe('KeycloakAdminController', () => {
       await controller.handlePushNotBefore('token', {} as ServerRequest, response);
 
       expect(response.status).toHaveBeenCalledWith(401);
-      expect(response.end).toHaveBeenCalledWith('unauthorized');
+      expect(response.send).toHaveBeenCalledWith('unauthorized');
    });
 
    it('returns 400 for push-not-before non-admin errors', async () => {
@@ -84,7 +79,7 @@ describe('KeycloakAdminController', () => {
       await controller.handlePushNotBefore('token', {} as ServerRequest, response);
 
       expect(response.status).toHaveBeenCalledWith(400);
-      expect(response.end).toHaveBeenCalledWith('bad request');
+      expect(response.send).toHaveBeenCalledWith('bad request');
    });
 
    it('returns 400 with generic message for non-Error push-not-before failures', async () => {
@@ -95,7 +90,7 @@ describe('KeycloakAdminController', () => {
       await controller.handlePushNotBefore('token', {} as ServerRequest, response);
 
       expect(response.status).toHaveBeenCalledWith(400);
-      expect(response.end).toHaveBeenCalledWith('bad request');
+      expect(response.send).toHaveBeenCalledWith('bad request');
    });
 
    it('handles successful back-channel logout callback', async () => {
@@ -129,7 +124,7 @@ describe('KeycloakAdminController', () => {
       );
 
       expect(response.status).toHaveBeenCalledWith(401);
-      expect(response.end).toHaveBeenCalledWith('unauthorized');
+      expect(response.send).toHaveBeenCalledWith('unauthorized');
    });
 
    it('returns 400 for back-channel non-admin errors', async () => {
@@ -146,7 +141,7 @@ describe('KeycloakAdminController', () => {
       );
 
       expect(response.status).toHaveBeenCalledWith(400);
-      expect(response.end).toHaveBeenCalledWith('bad request');
+      expect(response.send).toHaveBeenCalledWith('bad request');
    });
 
    it('returns 400 with generic message for non-Error back-channel failures', async () => {
@@ -161,6 +156,6 @@ describe('KeycloakAdminController', () => {
       );
 
       expect(response.status).toHaveBeenCalledWith(400);
-      expect(response.end).toHaveBeenCalledWith('bad request');
+      expect(response.send).toHaveBeenCalledWith('bad request');
    });
 });

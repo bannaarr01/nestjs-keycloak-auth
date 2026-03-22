@@ -145,8 +145,8 @@ export class ResourceGuard implements CanActivate {
 
       const user = request.user?.preferred_username ?? 'user';
 
-      // Build permissions as "resource:scope" pairs
-      const permissions = scopes.map((scope) => `${resource}:${scope}`);
+      // Build permissions as "resource#scope" pairs (Keycloak UMA format)
+      const permissions = scopes.map((scope) => `${resource}#${scope}`);
 
       // Local permission check: if the access token already contains the
       // required permissions, allow immediately without a server round-trip
@@ -326,29 +326,16 @@ export class ResourceGuard implements CanActivate {
       request: Record<string, unknown>,
       enforcerOptions?: KeycloakEnforcerOptions,
    ): Record<string, unknown> | undefined {
-      if (enforcerOptions) {
-         return enforcerOptions.claims?.(request);
+      if (!enforcerOptions) {
+         return undefined;
       }
 
-      const requestHeaders = request.headers as
-      | Record<string, string | string[] | undefined>
-      | undefined;
-      const userAgentRaw = requestHeaders?.['user-agent'];
-      const userAgent = Array.isArray(userAgentRaw)
-         ? userAgentRaw[0]
-         : userAgentRaw;
-      const httpUri =
-      (typeof request.url === 'string' && request.url) ||
-      (typeof request.originalUrl === 'string' && request.originalUrl) ||
-      '';
-
-      this.logger.verbose(
-         `Enforcing claims, http.uri: ${httpUri}, user.agent: ${userAgent ?? ''}`,
-      );
-
-      return {
-         'http.uri': [httpUri],
-         'user.agent': [userAgent ?? ''],
-      };
+      const claims = enforcerOptions.claims?.(request);
+      if (claims) {
+         this.logger.verbose(
+            `Enforcing claims, keys: ${Object.keys(claims).join(', ')}`,
+         );
+      }
+      return claims;
    }
 }

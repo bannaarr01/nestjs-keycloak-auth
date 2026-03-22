@@ -177,9 +177,16 @@ export class KeycloakHttpService {
       }
 
       if (options?.claims) {
+         // Keycloak expects every claim value to be a Collection (array).
+         // Normalize scalar values to single-element arrays so consumers
+         // can return plain strings from their claims() functions.
+         const normalized: Record<string, unknown[]> = {};
+         for (const [key, value] of Object.entries(options.claims)) {
+            normalized[key] = Array.isArray(value) ? value : [value];
+         }
          params.set(
             'claim_token',
-            Buffer.from(JSON.stringify(options.claims)).toString('base64'),
+            Buffer.from(JSON.stringify(normalized)).toString('base64'),
          );
          params.set('claim_token_format', 'urn:ietf:params:oauth:token-type:jwt');
       }

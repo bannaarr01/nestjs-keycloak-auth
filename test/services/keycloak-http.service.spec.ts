@@ -124,7 +124,7 @@ describe('KeycloakHttpService', () => {
          'at',
          ['orders:view'],
          {
-            claims: { tenant: 'a' },
+            claims: { tenant: 'a', roles: ['admin', 'user'] },
             response_mode: 'decision',
             audience: 'api',
             isPublic: false,
@@ -138,7 +138,10 @@ describe('KeycloakHttpService', () => {
       expect(arg.data).toContain('audience=api');
       expect(arg.data).toContain('response_mode=decision');
       expect(arg.data).toContain('permission=orders%3Aview');
-      expect(arg.data).toContain('claim_token=');
+      // Claims should be normalized: scalar 'a' becomes ['a']
+      const claimToken = new URLSearchParams(arg.data).get('claim_token')!;
+      const decoded = JSON.parse(Buffer.from(claimToken, 'base64').toString());
+      expect(decoded).toEqual({ tenant: ['a'], roles: ['admin', 'user'] });
       expect(arg.data).toContain('claim_token_format=urn%3Aietf%3Aparams%3Aoauth%3Atoken-type%3Ajwt');
       expect(arg.data).toContain('subject_token=at');
       expect(arg.headers.Authorization).toContain('Basic ');

@@ -213,11 +213,10 @@ describe('ResourceGuard', () => {
       expect(request.permissions).toEqual([{ rsid: 'orders', scopes: ['view'] }]);
       const options = keycloakHttp.checkPermission.mock.calls[0][5] as {
          response_mode: string;
-         claims: Record<string, string[]>;
+         claims?: Record<string, string[]>;
       };
       expect(options.response_mode).toBe('permissions');
-      expect(options.claims['http.uri']).toEqual(['/orders']);
-      expect(options.claims['user.agent']).toEqual(['jest']);
+      expect(options.claims).toBeUndefined();
    });
 
    it('handles requests without accessToken by skipping local permission check', async () => {
@@ -386,12 +385,10 @@ describe('ResourceGuard', () => {
 
       await expect(guard.canActivate(makeContext(request))).resolves.toBe(true);
       expect(request.scopes).toEqual(['view', 'extra']);
-      const claims = (
-         keycloakHttp.checkPermission.mock.calls[0][5] as {
-            claims: Record<string, string[]>;
-         }
-      ).claims;
-      expect(claims['http.uri']).toEqual(['/orig']);
+      const options = keycloakHttp.checkPermission.mock.calls[0][5] as {
+         claims?: Record<string, string[]>;
+      };
+      expect(options.claims).toBeUndefined();
    });
 
    it('validatePermissionsLocally covers edge cases', () => {
@@ -442,13 +439,7 @@ describe('ResourceGuard', () => {
       };
 
       expect(resolveClaims(req, { claims: () => ({ x: 1 }) })).toEqual({ x: 1 });
-      expect(resolveClaims(req, undefined)).toEqual({
-         'http.uri': ['/u'],
-         'user.agent': ['ua1'],
-      });
-      expect(resolveClaims({}, undefined)).toEqual({
-         'http.uri': [''],
-         'user.agent': [''],
-      });
+      expect(resolveClaims(req, undefined)).toBeUndefined();
+      expect(resolveClaims({}, undefined)).toBeUndefined();
    });
 });
