@@ -1,30 +1,33 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import * as KeycloakConnect from 'keycloak-connect';
-import {
-  KEYCLOAK_CONNECT_OPTIONS,
-  KEYCLOAK_COOKIE_DEFAULT,
-  KEYCLOAK_INSTANCE,
-  KEYCLOAK_MULTITENANT_SERVICE,
-  PolicyEnforcementMode,
-} from '../constants';
-import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
+import { KeycloakToken } from '../token/keycloak-token';
 import { META_PUBLIC } from '../decorators/public.decorator';
 import { META_RESOURCE } from '../decorators/resource.decorator';
-import {
-  ConditionalScopeFn,
-  META_CONDITIONAL_SCOPES,
-  META_SCOPES,
-} from '../decorators/scopes.decorator';
-import { KeycloakConnectConfig } from '../interface/keycloak-connect-options.interface';
-import { extractRequestAndAttachCookie, useKeycloak } from '../internal.util';
+import { extractRequest, useTenantConfig } from '../internal.util';
+import { KeycloakHttpService } from '../services/keycloak-http.service';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import { KeycloakPermission } from '../interface/keycloak-grant.interface';
+import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
+import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
+import {
+   CanActivate,
+   ExecutionContext,
+   Inject,
+   Injectable,
+   Logger,
+} from '@nestjs/common';
+import {
+   ConditionalScopeFn,
+   META_CONDITIONAL_SCOPES,
+   META_SCOPES,
+} from '../decorators/scopes.decorator';
+import {
+   KEYCLOAK_AUTH_OPTIONS,
+   KEYCLOAK_INSTANCE,
+   KEYCLOAK_MULTITENANT_SERVICE,
+   PolicyEnforcementMode,
+} from '../constants';
 
 /**
  * This adds a resource guard, which is policy enforcement by default is permissive.
@@ -33,163 +36,306 @@ import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.ser
  */
 @Injectable()
 export class ResourceGuard implements CanActivate {
-  private readonly logger = new Logger(ResourceGuard.name);
-  private readonly reflector = new Reflector();
+   private readonly logger = new Logger(ResourceGuard.name);
+   private readonly reflector = new Reflector();
 
-  constructor(
+   constructor(
     @Inject(KEYCLOAK_INSTANCE)
-    private singleTenant: KeycloakConnect.Keycloak,
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private keycloakOpts: KeycloakConnectConfig,
+    private singleTenant: ResolvedTenantConfig,
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private keycloakOpts: KeycloakAuthConfig,
     @Inject(KEYCLOAK_MULTITENANT_SERVICE)
     private multiTenant: KeycloakMultiTenantService,
-  ) {}
+    private keycloakHttp: KeycloakHttpService,
+   ) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const defaultEnforcerOpts: KeycloakConnect.EnforcerOptions = {
-      claims: (request: any) => {
-        const httpUri = request.url;
-        const userAgent = request.headers['user-agent'];
-
-        this.logger.verbose(
-          `Enforcing claims, http.uri: ${httpUri}, user.agent: ${userAgent}`,
-        );
-
-        return {
-          'http.uri': [httpUri],
-          'user.agent': [userAgent],
-        };
-      },
-    };
-
-    const resource = this.reflector.get<string>(
-      META_RESOURCE,
-      context.getClass(),
-    );
-    const explicitScopes =
+   async canActivate(context: ExecutionContext): Promise<boolean> {
+      const resource = this.reflector.get<string>(
+         META_RESOURCE,
+         context.getClass(),
+      );
+      const explicitScopes =
       this.reflector.get<string[]>(META_SCOPES, context.getHandler()) ?? [];
-    const conditionalScopes = this.reflector.get<ConditionalScopeFn>(
-      META_CONDITIONAL_SCOPES,
-      context.getHandler(),
-    );
-    const isPublic = this.reflector.getAllAndOverride<boolean>(META_PUBLIC, [
-      context.getClass(),
-      context.getHandler(),
-    ]);
-    const enforcerOpts =
-      this.reflector.getAllAndOverride<KeycloakConnect.EnforcerOptions>(
-        META_ENFORCER_OPTIONS,
-        [context.getClass(), context.getHandler()],
-      ) ?? defaultEnforcerOpts;
+      const conditionalScopes = this.reflector.get<ConditionalScopeFn>(
+         META_CONDITIONAL_SCOPES,
+         context.getHandler(),
+      );
+      const isPublic = this.reflector.getAllAndOverride<boolean>(META_PUBLIC, [
+         context.getClass(),
+         context.getHandler(),
+      ]);
+      const enforcerOptions =
+      this.reflector.getAllAndOverride<KeycloakEnforcerOptions>(
+         META_ENFORCER_OPTIONS,
+         [context.getClass(), context.getHandler()],
+      );
 
-    // Default to permissive
-    const policyEnforcementMode =
+      // Default to permissive
+      const policyEnforcementMode =
       this.keycloakOpts.policyEnforcement || PolicyEnforcementMode.PERMISSIVE;
-    const shouldAllow =
+      const shouldAllow =
       policyEnforcementMode === PolicyEnforcementMode.PERMISSIVE;
 
-    // Extract request/response
-    const cookieKey = this.keycloakOpts.cookieKey || KEYCLOAK_COOKIE_DEFAULT;
-    const [request, response] = extractRequestAndAttachCookie(
-      context,
-      cookieKey,
-    );
+      // Extract request/response
+      const [request] = extractRequest(context);
 
-    // if is not an HTTP request ignore this guard
-    if (!request) {
-      return true;
-    }
-
-    if (!request.user && isPublic) {
-      this.logger.verbose(`Route has no user, and is public, allowed`);
-      return true;
-    }
-
-    const keycloak = await useKeycloak(
-      request,
-      request.accessToken,
-      this.singleTenant,
-      this.multiTenant,
-      this.keycloakOpts,
-    );
-
-    const grant = await keycloak.grantManager.createGrant({
-      access_token: request.accessToken,
-    });
-
-    // No resource given, check policy enforcement mode
-    if (!resource) {
-      if (shouldAllow) {
-        this.logger.verbose(
-          `Controller has no @Resource defined, request allowed due to policy enforcement`,
-        );
-      } else {
-        this.logger.verbose(
-          `Controller has no @Resource defined, request denied due to policy enforcement`,
-        );
+      // if is not an HTTP request ignore this guard
+      if (!request) {
+         return true;
       }
-      return shouldAllow;
-    }
 
-    // Build the required scopes
-    const conditionalScopesResult =
-      conditionalScopes != null || conditionalScopes != undefined
-        ? conditionalScopes(request, grant.access_token)
-        : [];
-
-    const scopes = [...explicitScopes, ...conditionalScopesResult];
-
-    // Attach resolved scopes
-    request.scopes = scopes;
-
-    // No scopes given, check policy enforcement mode
-    if (!scopes || scopes.length === 0) {
-      if (shouldAllow) {
-        this.logger.verbose(
-          `Route has no @Scope/@ConditionalScopes defined, request allowed due to policy enforcement`,
-        );
-      } else {
-        this.logger.verbose(
-          `Route has no @Scope/@ConditionalScopes defined, request denied due to policy enforcement`,
-        );
+      if (!request.user && isPublic) {
+         this.logger.verbose('Route has no user, and is public, allowed');
+         return true;
       }
-      return shouldAllow;
-    }
 
-    this.logger.verbose(
-      `Protecting resource [ ${resource} ] with scopes: [ ${scopes} ]`,
-    );
+      const tenantConfig = await useTenantConfig(
+         request,
+         request.accessToken,
+         this.singleTenant,
+         this.multiTenant,
+         this.keycloakOpts,
+      );
 
-    const user = request.user?.preferred_username ?? 'user';
+      // No resource given, check policy enforcement mode
+      if (!resource) {
+         if (shouldAllow) {
+            this.logger.verbose(
+               'Controller has no @Resource defined, request allowed due to policy enforcement',
+            );
+         } else {
+            this.logger.verbose(
+               'Controller has no @Resource defined, request denied due to policy enforcement',
+            );
+         }
+         return shouldAllow;
+      }
 
-    const enforcerFn = createEnforcerContext(request, response, enforcerOpts);
+      // Build the required scopes
+      let token: KeycloakToken | undefined;
+      if (conditionalScopes) {
+         token = new KeycloakToken(request.accessToken, tenantConfig.clientId);
+      }
+      const conditionalScopesResult = conditionalScopes
+         ? conditionalScopes(request, token)
+         : [];
 
-    // Build permissions
-    const permissions = scopes.map((scope) => `${resource}:${scope}`);
-    const isAllowed = await enforcerFn(keycloak, permissions);
+      const scopes = [...explicitScopes, ...conditionalScopesResult];
 
-    // If statement for verbose logging only
-    if (!isAllowed) {
-      this.logger.verbose(`Resource [ ${resource} ] denied to [ ${user} ]`);
-    } else {
-      this.logger.verbose(`Resource [ ${resource} ] granted to [ ${user} ]`);
-    }
+      // Attach resolved scopes
+      request.scopes = scopes;
 
-    return isAllowed;
-  }
+      // No scopes given, check policy enforcement mode
+      if (!scopes || scopes.length === 0) {
+         if (shouldAllow) {
+            this.logger.verbose(
+               'Route has no @Scope/@ConditionalScopes defined, request allowed due to policy enforcement',
+            );
+         } else {
+            this.logger.verbose(
+               'Route has no @Scope/@ConditionalScopes defined, request denied due to policy enforcement',
+            );
+         }
+         return shouldAllow;
+      }
+
+      this.logger.verbose(
+         `Protecting resource [ ${resource} ] with scopes: [ ${scopes} ]`,
+      );
+
+      const user = request.user?.preferred_username ?? 'user';
+
+      // Build permissions as "resource#scope" pairs (Keycloak UMA format)
+      const permissions = scopes.map((scope) => `${resource}#${scope}`);
+
+      // Local permission check: if the access token already contains the
+      // required permissions, allow immediately without a server round-trip
+      // (matches keycloak-connect enforcer.js behavior)
+      if (request.accessToken) {
+         const accessToken =
+        token ?? new KeycloakToken(request.accessToken, tenantConfig.clientId);
+
+         const allPermissionsGranted = scopes.every((scope) =>
+            accessToken.hasPermission(resource, scope),
+         );
+
+         if (allPermissionsGranted) {
+            this.logger.verbose(
+               `Resource [ ${resource} ] granted to [ ${user} ] (local token check)`,
+            );
+            return true;
+         }
+      }
+
+      // Server-side permission check
+      const claims = this.resolveClaims(request, enforcerOptions);
+      const responseMode = enforcerOptions?.response_mode ?? 'permissions';
+      const audience =
+      enforcerOptions?.resource_server_id ?? tenantConfig.clientId;
+      const isPublicClient = tenantConfig.isPublic;
+
+      if (responseMode === 'permissions') {
+      // Permissions mode: get permission list from server, validate locally
+         try {
+            const serverPermissions = (await this.keycloakHttp.checkPermission(
+               tenantConfig.realmUrl,
+               tenantConfig.clientId,
+               tenantConfig.secret,
+               request.accessToken,
+               permissions,
+               {
+                  claims: claims || undefined,
+                  response_mode: 'permissions',
+                  audience,
+                  isPublic: isPublicClient,
+               },
+            )) as KeycloakPermission[];
+
+            const isAllowed = this.validatePermissionsLocally(
+               serverPermissions,
+               resource,
+               scopes,
+            );
+
+            if (isAllowed) {
+               // Attach permissions to request (matches original enforcer.js)
+               request.permissions = serverPermissions;
+               this.logger.verbose(
+                  `Resource [ ${resource} ] granted to [ ${user} ]`,
+               );
+            } else {
+               this.logger.verbose(`Resource [ ${resource} ] denied to [ ${user} ]`);
+            }
+            return isAllowed;
+         } catch {
+            this.logger.verbose(
+               `Resource [ ${resource} ] denied to [ ${user} ] (permissions check failed)`,
+            );
+            return false;
+         }
+      }
+
+      if (responseMode === 'token') {
+      // Token mode: get a new grant with permissions, validate locally
+         try {
+            const grant = (await this.keycloakHttp.checkPermission(
+               tenantConfig.realmUrl,
+               tenantConfig.clientId,
+               tenantConfig.secret,
+               request.accessToken,
+               permissions,
+               {
+                  claims: claims || undefined,
+                  response_mode: 'token',
+                  audience,
+                  isPublic: isPublicClient,
+               },
+            )) as { access_token: string };
+
+            const grantToken = new KeycloakToken(
+               grant.access_token,
+               tenantConfig.clientId,
+            );
+            const isAllowed = scopes.every((scope) =>
+               grantToken.hasPermission(resource, scope),
+            );
+
+            if (isAllowed) {
+               this.logger.verbose(
+                  `Resource [ ${resource} ] granted to [ ${user} ]`,
+               );
+            } else {
+               this.logger.verbose(`Resource [ ${resource} ] denied to [ ${user} ]`);
+            }
+            return isAllowed;
+         } catch {
+            this.logger.verbose(
+               `Resource [ ${resource} ] denied to [ ${user} ] (token check failed)`,
+            );
+            return false;
+         }
+      }
+
+      // Default: decision mode
+      const isAllowed = (await this.keycloakHttp.checkPermission(
+         tenantConfig.realmUrl,
+         tenantConfig.clientId,
+         tenantConfig.secret,
+         request.accessToken,
+         permissions,
+         {
+            claims: claims || undefined,
+            response_mode: 'decision',
+            audience,
+            isPublic: isPublicClient,
+         },
+      )) as boolean;
+
+      // If statement for verbose logging only
+      if (!isAllowed) {
+         this.logger.verbose(`Resource [ ${resource} ] denied to [ ${user} ]`);
+      } else {
+         this.logger.verbose(`Resource [ ${resource} ] granted to [ ${user} ]`);
+      }
+
+      return isAllowed;
+   }
+
+   /**
+   * Validate server-returned permissions against expected resource:scope pairs.
+   * Matches keycloak-connect enforcer.js handlePermissions logic.
+   */
+   private validatePermissionsLocally(
+      serverPermissions: KeycloakPermission[],
+      resource: string,
+      scopes: string[],
+   ): boolean {
+      if (!serverPermissions || serverPermissions.length === 0) {
+         return false;
+      }
+
+      for (const scope of scopes) {
+         let found = false;
+
+         for (const permission of serverPermissions) {
+            if (permission.rsid === resource || permission.rsname === resource) {
+               if (scope) {
+                  if (permission.scopes && permission.scopes.length > 0) {
+                     if (!permission.scopes.includes(scope)) {
+                        return false;
+                     }
+                     found = true;
+                     break;
+                  }
+                  return false;
+               }
+               found = true;
+               break;
+            }
+         }
+
+         if (!found) {
+            return false;
+         }
+      }
+
+      return true;
+   }
+
+   private resolveClaims(
+      request: Record<string, unknown>,
+      enforcerOptions?: KeycloakEnforcerOptions,
+   ): Record<string, unknown> | undefined {
+      if (!enforcerOptions) {
+         return undefined;
+      }
+
+      const claims = enforcerOptions.claims?.(request);
+      if (claims) {
+         this.logger.verbose(
+            `Enforcing claims, keys: ${Object.keys(claims).join(', ')}`,
+         );
+      }
+      return claims;
+   }
 }
-
-const createEnforcerContext =
-  (request: any, response: any, options?: KeycloakConnect.EnforcerOptions) =>
-  (keycloak: KeycloakConnect.Keycloak, permissions: string[]) =>
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    new Promise<boolean>((resolve, _) =>
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      keycloak.enforcer(permissions, options)(request, response, (_: any) => {
-        if (request.resourceDenied) {
-          resolve(false);
-        } else {
-          resolve(true);
-        }
-      }),
-    );

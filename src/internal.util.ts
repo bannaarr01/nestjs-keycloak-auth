@@ -1,77 +1,57 @@
-import { ContextType, ExecutionContext } from '@nestjs/common';
-import KeycloakConnect from 'keycloak-connect';
-import { KeycloakConnectConfig } from './interface/keycloak-connect-options.interface';
-import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 import { parseToken } from './util';
+import { ExecutionContext } from '@nestjs/common';
+import { ResolvedTenantConfig } from './interface/tenant-config.interface';
+import { KeycloakRequestLike } from './interface/keycloak-request.interface';
+import { KeycloakAuthConfig } from './interface/keycloak-auth-options.interface';
+import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 
-// Confusing and all, but I needed to extract this fn to avoid more repeating code
-// TODO: Rework in 2.0
-export const useKeycloak = async (
-  request: any,
-  jwt: string,
-  singleTenant: KeycloakConnect.Keycloak,
-  multiTenant: KeycloakMultiTenantService,
-  opts: KeycloakConnectConfig,
-): Promise<KeycloakConnect.Keycloak> => {
-  if (opts.multiTenant && opts.multiTenant.realmResolver) {
-    const resolvedRealm = opts.multiTenant.realmResolver(request);
-    const realm =
+export { KeycloakRequestLike };
+
+/**
+ * Resolves the tenant configuration for the current request.
+ * For multi-tenant: uses the realm resolver or extracts realm from JWT issuer.
+ * For single-tenant: returns the provided default config.
+ */
+export const useTenantConfig = async (
+   request: KeycloakRequestLike,
+   jwt: string | undefined,
+   singleTenantConfig: ResolvedTenantConfig,
+   multiTenant: KeycloakMultiTenantService,
+   opts: KeycloakAuthConfig,
+): Promise<ResolvedTenantConfig> => {
+   if (opts.multiTenant && opts.multiTenant.realmResolver) {
+      const resolvedRealm = opts.multiTenant.realmResolver(request);
+      const realm =
       resolvedRealm instanceof Promise ? await resolvedRealm : resolvedRealm;
-    return await multiTenant.get(realm, request);
-  } else if (!opts.realm) {
-    const payload = parseToken(jwt);
-    const issuerRealm = payload.iss.split('/').pop();
-    return await multiTenant.get(issuerRealm, request);
-  }
-  return singleTenant;
+      return await multiTenant.get(realm, request);
+   } else if (!opts.realm) {
+      if (!jwt) {
+         return singleTenantConfig;
+      }
+
+      try {
+         const payload = parseToken(jwt);
+         const issuerRealm = payload.iss?.split('/').pop();
+         if (issuerRealm) {
+            return await multiTenant.get(issuerRealm, request);
+         }
+      } catch {
+      // Fall back to the default config when issuer parsing fails.
+         return singleTenantConfig;
+      }
+   }
+   return singleTenantConfig;
 };
 
-export const attachCookieToHeader = (request: any, cookieKey: string) => {
-  // Attach cookie as authorization header
-  if (request && request.cookies && request.cookies[cookieKey]) {
-    request.headers.authorization = `Bearer ${request.cookies[cookieKey]}`;
-  }
+export const extractRequest = (
+   context: ExecutionContext,
+): [KeycloakRequestLike | undefined, unknown] => {
+   if (context.getType() === 'http') {
+      const httpContext = context.switchToHttp();
+      const request = httpContext.getRequest() as KeycloakRequestLike;
+      const response = httpContext.getResponse();
+      return [request, response];
+   }
 
-  return request;
-};
-
-type GqlContextType = 'graphql' | ContextType;
-
-export const extractRequest = (context: ExecutionContext): [any, any] => {
-  let request: any, response: any;
-
-  // Check if request is coming from graphql or http
-  if (context.getType() === 'http') {
-    // http request
-    const httpContext = context.switchToHttp();
-
-    request = httpContext.getRequest();
-    response = httpContext.getResponse();
-  } else if (context.getType<GqlContextType>() === 'graphql') {
-    let gql: any;
-    // Check if graphql is installed
-    try {
-      gql = require('@nestjs/graphql');
-    } catch (er) {
-      throw new Error('@nestjs/graphql is not installed, cannot proceed');
-    }
-
-    // graphql request
-    const gqlContext = gql.GqlExecutionContext.create(context).getContext();
-
-    request = gqlContext.req;
-    response = gqlContext.res;
-  }
-
-  return [request, response];
-};
-
-export const extractRequestAndAttachCookie = (
-  context: ExecutionContext,
-  cookieKey: string,
-) => {
-  const [tmpRequest, response] = extractRequest(context);
-  const request = attachCookieToHeader(tmpRequest, cookieKey);
-
-  return [request, response];
+   return [undefined, undefined];
 };

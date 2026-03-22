@@ -1,2 +1,2 @@
 // public-api
-export * from './keycloak-connect.module';
+export * from './keycloak-auth.module';

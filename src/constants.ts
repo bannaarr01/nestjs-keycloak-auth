@@ -1,7 +1,7 @@
 /**
  * Used internally, provides keycloak options for the Nest guards.
  */
-export const KEYCLOAK_CONNECT_OPTIONS = 'KEYCLOAK_CONNECT_OPTIONS';
+export const KEYCLOAK_AUTH_OPTIONS = 'KEYCLOAK_AUTH_OPTIONS';
 
 /**
  * Key for injecting a keycloak instance.
@@ -12,11 +12,6 @@ export const KEYCLOAK_INSTANCE = 'KEYCLOAK_INSTANCE';
  * Key for injecting a keycloak multi tenant service.
  */
 export const KEYCLOAK_MULTITENANT_SERVICE = 'KEYCLOAK_MULTITENANT_SERVICE';
-
-/**
- * Default cookie key.
- */
-export const KEYCLOAK_COOKIE_DEFAULT = 'KEYCLOAK_JWT';
 
 /**
  * Role matching mode.

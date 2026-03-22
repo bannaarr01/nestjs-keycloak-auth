@@ -1,205 +1,204 @@
+import { KeycloakConfigError } from '../errors';
 import { Inject, Injectable } from '@nestjs/common';
-import KeycloakConnect from 'keycloak-connect';
-import { KEYCLOAK_CONNECT_OPTIONS } from '../constants';
-import { KeycloakConnectOptions } from '../interface/keycloak-connect-options.interface';
+import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
+import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import { KeycloakAuthOptions } from '../interface/keycloak-auth-options.interface';
 
 /**
- * Stores all keycloak instances when multi tenant option is defined.
+ * Stores resolved tenant configurations for multi-tenant scenarios.
  */
 @Injectable()
 export class KeycloakMultiTenantService {
-  private instances: Map<string, KeycloakConnect.Keycloak> = new Map();
+   private configs: Map<string, ResolvedTenantConfig> = new Map();
 
-  constructor(
-    @Inject(KEYCLOAK_CONNECT_OPTIONS)
-    private keycloakOpts: KeycloakConnectOptions,
-  ) {}
+   constructor(
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private keycloakOpts: KeycloakAuthOptions,
+   ) {}
 
-  /**
-   * Clears the cached Keycloak instances.
+   /**
+   * Clears the cached tenant configurations.
    */
-  clear() {
-    this.instances.clear();
-  }
+   clear() {
+      this.configs.clear();
+   }
 
-  /**
-   * Retrieves a keycloak instance based on the realm provided.
+   /**
+   * Retrieves a resolved tenant config based on the realm provided.
    * @param realm the realm to retrieve from
    * @param request the request instance, defaults to undefined
-   * @returns the multi tenant keycloak instance
+   * @returns the resolved tenant configuration
    */
-  async get(
-    realm: string,
-    request: any = undefined,
-  ): Promise<KeycloakConnect.Keycloak> {
-    if (typeof this.keycloakOpts === 'string') {
-      throw new Error(
-        'Keycloak configuration is a configuration path. This should not happen after module load.',
-      );
-    }
-    if (
-      this.keycloakOpts.multiTenant === null ||
+   async get(
+      realm: string,
+      request: unknown = undefined,
+   ): Promise<ResolvedTenantConfig> {
+      if (typeof this.keycloakOpts === 'string') {
+         throw new KeycloakConfigError(
+            'Keycloak configuration is a configuration path. This should not happen after module load.',
+         );
+      }
+      if (
+         this.keycloakOpts.multiTenant === null ||
       this.keycloakOpts.multiTenant === undefined
-    ) {
-      throw new Error(
-        'Multi tenant is not defined yet multi tenant service is being called.',
-      );
-    }
+      ) {
+         throw new KeycloakConfigError(
+            'Multi tenant is not defined yet multi tenant service is being called.',
+         );
+      }
 
-    const authServerUrl = await this.resolveAuthServerUrl(realm, request);
-    const secret = await this.resolveSecret(realm, request);
-    const clientId = await this.resolveClientId(realm, request);
-
-    // Check if existing
-    if (
-      this.instances.has(realm) &&
+      // Check if existing — return early before resolving
+      if (
+         this.configs.has(realm) &&
       !this.keycloakOpts.multiTenant.resolveAlways
-    ) {
-      // Otherwise return the instance
-      return this.instances.get(realm);
-    } else {
-      // TODO: Repeating code from  provider, will need to rework this in 2.0
-      // Override realm, secret, and authServerUrl
-      const keycloakOpts: any = Object.assign(this.keycloakOpts, {
-        authServerUrl,
-        realm,
-        secret,
-        clientId,
-      });
-      const keycloak: any = new KeycloakConnect({}, keycloakOpts);
+      ) {
+         return this.configs.get(realm);
+      }
 
-      // The most important part
-      keycloak.accessDenied = (req: any, res: any, next: any) => {
-        req.resourceDenied = true;
-        next();
+      const authServerUrl = await this.resolveAuthServerUrl(realm, request);
+      const secret = await this.resolveSecret(realm, request);
+      const clientId = await this.resolveClientId(realm, request);
+
+      const realmUrl = `${authServerUrl.replace(/\/$/, '')}/realms/${realm}`;
+      const realmAdminUrl = `${authServerUrl.replace(/\/$/, '')}/admin/realms/${realm}`;
+      const isPublic =
+        typeof this.keycloakOpts !== 'string' &&
+        !!(
+           this.keycloakOpts['public-client'] ??
+          this.keycloakOpts.public ??
+          false
+        );
+      const bearerOnly =
+        typeof this.keycloakOpts !== 'string' &&
+        !!(
+           this.keycloakOpts['bearer-only'] ??
+          this.keycloakOpts.bearerOnly ??
+          false
+        );
+
+      const config: ResolvedTenantConfig = {
+         authServerUrl,
+         realm,
+         clientId,
+         secret,
+         realmUrl,
+         realmAdminUrl,
+         isPublic,
+         bearerOnly,
       };
 
-      // Save instance
-      this.instances.set(realm, keycloak);
-      return keycloak;
-    }
-  }
+      this.configs.set(realm, config);
+      return config;
+   }
 
-  async resolveAuthServerUrl(
-    realm: string,
-    request: any = undefined,
-  ): Promise<string> {
-    if (typeof this.keycloakOpts === 'string') {
-      throw new Error(
-        'Keycloak configuration is a configuration path. This should not happen after module load.',
-      );
-    }
-    if (
-      this.keycloakOpts.multiTenant === null ||
+   async resolveAuthServerUrl(
+      realm: string,
+      request: unknown = undefined,
+   ): Promise<string> {
+      if (typeof this.keycloakOpts === 'string') {
+         throw new KeycloakConfigError(
+            'Keycloak configuration is a configuration path. This should not happen after module load.',
+         );
+      }
+      if (
+         this.keycloakOpts.multiTenant === null ||
       this.keycloakOpts.multiTenant === undefined
-    ) {
-      throw new Error(
-        'Multi tenant is not defined yet multi tenant service is being called.',
-      );
-    }
+      ) {
+         throw new KeycloakConfigError(
+            'Multi tenant is not defined yet multi tenant service is being called.',
+         );
+      }
 
-    // If no realm auth server url resolver is defined, return defaults
-    if (!this.keycloakOpts.multiTenant.realmAuthServerUrlResolver) {
-      return (
-        this.keycloakOpts.authServerUrl ||
+      // If no realm auth server url resolver is defined, return defaults
+      if (!this.keycloakOpts.multiTenant.realmAuthServerUrlResolver) {
+         return (
+            this.keycloakOpts.authServerUrl ||
         this.keycloakOpts['auth-server-url'] ||
         this.keycloakOpts.serverUrl ||
         this.keycloakOpts['server-url']
-      );
-    }
+         );
+      }
 
-    // Resolve realm authServerUrl
-    const resolvedAuthServerUrl =
-      this.keycloakOpts.multiTenant.realmAuthServerUrlResolver(realm, request);
-    const authServerUrl =
-      resolvedAuthServerUrl || resolvedAuthServerUrl instanceof Promise
-        ? await resolvedAuthServerUrl
-        : resolvedAuthServerUrl;
+      // Resolve realm authServerUrl
+      const authServerUrl =
+      await this.keycloakOpts.multiTenant.realmAuthServerUrlResolver(realm, request);
 
-    // Override auth server url
-    // Order of priority: resolved realm auth server url > provided auth server url
-    return (
-      authServerUrl ||
+      // Override auth server url
+      // Order of priority: resolved realm auth server url > provided auth server url
+      return (
+         authServerUrl ||
       this.keycloakOpts.authServerUrl ||
       this.keycloakOpts['auth-server-url'] ||
       this.keycloakOpts.serverUrl ||
       this.keycloakOpts['server-url']
-    );
-  }
-
-  async resolveClientId(
-    realm: string,
-    request: any = undefined,
-  ): Promise<string> {
-    if (typeof this.keycloakOpts === 'string') {
-      throw new Error(
-        'Keycloak configuration is a configuration path. This should not happen after module load.',
       );
-    }
-    if (
-      this.keycloakOpts.multiTenant === null ||
+   }
+
+   async resolveClientId(
+      realm: string,
+      request: unknown = undefined,
+   ): Promise<string> {
+      if (typeof this.keycloakOpts === 'string') {
+         throw new KeycloakConfigError(
+            'Keycloak configuration is a configuration path. This should not happen after module load.',
+         );
+      }
+      if (
+         this.keycloakOpts.multiTenant === null ||
       this.keycloakOpts.multiTenant === undefined
-    ) {
-      throw new Error(
-        'Multi tenant is not defined yet multi tenant service is being called.',
-      );
-    }
+      ) {
+         throw new KeycloakConfigError(
+            'Multi tenant is not defined yet multi tenant service is being called.',
+         );
+      }
 
-    // If no realm client-id resolver is defined, return defaults
-    if (!this.keycloakOpts.multiTenant.realmClientIdResolver) {
-      return this.keycloakOpts.clientId || this.keycloakOpts['client-id'];
-    }
+      // If no realm client-id resolver is defined, return defaults
+      if (!this.keycloakOpts.multiTenant.realmClientIdResolver) {
+         return this.keycloakOpts.clientId || this.keycloakOpts['client-id'];
+      }
 
-    // Resolve realm client-id
-    const resolvedClientId =
-      this.keycloakOpts.multiTenant.realmClientIdResolver(realm, request);
-    const realmClientId =
-      resolvedClientId || resolvedClientId instanceof Promise
-        ? await resolvedClientId
-        : resolvedClientId;
+      // Resolve realm client-id
+      const realmClientId =
+      await this.keycloakOpts.multiTenant.realmClientIdResolver(realm, request);
 
-    // Override client-id
-    // Order of priority: resolved realm secret > default global secret
-    return (
-      realmClientId ||
+      // Override client-id
+      // Order of priority: resolved realm client-id > default global client-id
+      return (
+         realmClientId ||
       this.keycloakOpts.clientId ||
       this.keycloakOpts['client-id']
-    );
-  }
-
-  async resolveSecret(
-    realm: string,
-    request: any = undefined,
-  ): Promise<string> {
-    if (typeof this.keycloakOpts === 'string') {
-      throw new Error(
-        'Keycloak configuration is a configuration path. This should not happen after module load.',
       );
-    }
-    if (
-      this.keycloakOpts.multiTenant === null ||
+   }
+
+   async resolveSecret(
+      realm: string,
+      request: unknown = undefined,
+   ): Promise<string> {
+      if (typeof this.keycloakOpts === 'string') {
+         throw new KeycloakConfigError(
+            'Keycloak configuration is a configuration path. This should not happen after module load.',
+         );
+      }
+      if (
+         this.keycloakOpts.multiTenant === null ||
       this.keycloakOpts.multiTenant === undefined
-    ) {
-      throw new Error(
-        'Multi tenant is not defined yet multi tenant service is being called.',
-      );
-    }
+      ) {
+         throw new KeycloakConfigError(
+            'Multi tenant is not defined yet multi tenant service is being called.',
+         );
+      }
 
-    // If no realm secret resolver is defined, return defaults
-    if (!this.keycloakOpts.multiTenant.realmSecretResolver) {
-      return this.keycloakOpts.secret;
-    }
+      // If no realm secret resolver is defined, return defaults
+      if (!this.keycloakOpts.multiTenant.realmSecretResolver) {
+         return this.keycloakOpts.secret;
+      }
 
-    // Resolve realm secret
-    const resolvedRealmSecret =
-      this.keycloakOpts.multiTenant.realmSecretResolver(realm, request);
-    const realmSecret =
-      resolvedRealmSecret || resolvedRealmSecret instanceof Promise
-        ? await resolvedRealmSecret
-        : resolvedRealmSecret;
+      // Resolve realm secret
+      const realmSecret =
+      await this.keycloakOpts.multiTenant.realmSecretResolver(realm, request);
 
-    // Override secret
-    // Order of priority: resolved realm secret > default global secret
-    return realmSecret || this.keycloakOpts.secret;
-  }
+      // Override secret
+      // Order of priority: resolved realm secret > default global secret
+      return realmSecret || this.keycloakOpts.secret;
+   }
 }

@@ -1,12 +1,12 @@
 // The typings are a bit of a mess, I'm sure there's a better way to do this.
 
 import {
-  PolicyEnforcementMode,
-  RoleMerge,
-  TokenValidation,
+   PolicyEnforcementMode,
+   RoleMerge,
+   TokenValidation,
 } from '../constants';
 
-export type KeycloakConnectOptions = string | KeycloakConnectConfig;
+export type KeycloakAuthOptions = string | KeycloakAuthConfig;
 
 /**
  * Multi tenant configuration.
@@ -19,27 +19,27 @@ export interface MultiTenantOptions {
   /**
    * The realm resolver function.
    */
-  realmResolver: (request: any) => Promise<string> | string;
+  realmResolver: (request: unknown) => Promise<string> | string;
   /**
    * The realm secret resolver function.
    */
   realmSecretResolver?: (
     realm: string,
-    request?: any,
+    request?: unknown,
   ) => Promise<string> | string;
   /**
    * The realm auth server url resolver function.
    */
   realmAuthServerUrlResolver?: (
     realm: string,
-    request?: any,
+    request?: unknown,
   ) => Promise<string> | string;
   /**
    * The realm client id resolver function.
    */
   realmClientIdResolver: (
     realm: string,
-    request?: any,
+    request?: unknown,
   ) => Promise<string> | string;
 }
 
@@ -47,11 +47,6 @@ export interface MultiTenantOptions {
  * Library only configuration.
  */
 export interface NestKeycloakConfig {
-  /**
-   * Cookie key.
-   */
-  cookieKey?: string;
-
   /**
    * Sets the policy enforcement mode for this adapter, defaults to {@link PolicyEnforcementMode.PERMISSIVE}.
    */
@@ -77,7 +72,7 @@ export interface NestKeycloakConfig {
  * Keycloak Connect options.
  * @see {@link https://github.com/keycloak/keycloak-nodejs-connect/blob/f8e011aea5/middleware/auth-utils/config.js}
  */
-export interface KeycloakConnectConfig extends NestKeycloakConfig {
+export interface KeycloakAuthConfig extends NestKeycloakConfig {
   /**
    * Realm ID.
    */
@@ -89,12 +84,12 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
   resource?: string;
   /**
    * Client/Application ID.
-   * @see {KeycloakConnectOptions#resource}
+   * @see {KeycloakAuthOptions#resource}
    */
   'client-id'?: string;
   /**
    * Client/Application ID.
-   * @see {KeycloakConnectOptions#resource}
+   * @see {KeycloakAuthOptions#resource}
    */
   clientId?: string;
 
@@ -110,7 +105,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * If this is a public application or confidential.
-   * @see {KeycloakConnectOptions#public}
+   * @see {KeycloakAuthOptions#public}
    */
   'public-client'?: boolean;
   /**
@@ -120,17 +115,17 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * Authentication server URL.
-   * @see {KeycloakConnectOptions#authServerUrl}
+   * @see {KeycloakAuthOptions#authServerUrl}
    */
   'auth-server-url'?: string;
   /**
    * Authentication server URL.
-   * @see {KeycloakConnectOptions#authServerUrl}
+   * @see {KeycloakAuthOptions#authServerUrl}
    */
   'server-url'?: string;
   /**
    * Authentication server URL.
-   * @see {KeycloakConnectOptions#authServerUrl}
+   * @see {KeycloakAuthOptions#authServerUrl}
    */
   serverUrl?: string;
   /**
@@ -140,7 +135,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * How many minutes before retrying getting the keys.
-   * @see {KeycloakConnectOptions#minTimeBetweenJwksRequests}
+   * @see {KeycloakAuthOptions#minTimeBetweenJwksRequests}
    */
   'min-time-between-jwks-requests'?: number;
   /**
@@ -150,7 +145,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * If this is a Bearer Only application.
-   * @see {KeycloakConnectOptions#bearerOnly}
+   * @see {KeycloakAuthOptions#bearerOnly}
    */
   'bearer-only'?: boolean;
   /**
@@ -160,7 +155,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * Formatted public-key.
-   * @see {KeycloakConnectOptions#realmPublicKey}
+   * @see {KeycloakAuthOptions#realmPublicKey}
    */
   'realm-public-key'?: string;
   /**
@@ -170,7 +165,7 @@ export interface KeycloakConnectConfig extends NestKeycloakConfig {
 
   /**
    * Verify token audience.
-   * @see {KeycloakConnectOptions#verifyTokenAudience}
+   * @see {KeycloakAuthOptions#verifyTokenAudience}
    */
   'verify-token-audience'?: boolean;
   /**

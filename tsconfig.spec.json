@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./",
+    "target": "es2020",
+    "sourceMap": true,
+    "inlineSources": true,
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

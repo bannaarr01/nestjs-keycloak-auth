@@ -5,6 +5,7 @@
     "tagArgs": ["-s"]
   },
   "hooks": {
-    "after:bump": ["pnpm run clean", "pnpm run build"]
+    "before:init": ["npm run lint", "npm run test:cov"],
+    "after:bump": ["npm run clean", "npm run build"]
   }
 }

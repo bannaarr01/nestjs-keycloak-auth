@@ -1,0 +1,72 @@
+services:
+  nest-api:
+    build:
+      context: ..
+      dockerfile: example/Dockerfile
+    container_name: nkc-api
+    restart: unless-stopped
+    depends_on:
+      keycloak:
+        condition: service_started
+    environment:
+      KC_AUTH_SERVER_URL: http://keycloak:8080
+      KC_REALM: nest-example
+      KC_CLIENT_ID: nest-api
+      KC_CLIENT_SECRET: HwKxokCTFh4KcGhCW3KYXyypygD0S7D5
+      KC_POLICY_ENFORCEMENT: permissive
+      KC_TOKEN_VALIDATION: offline
+      KC_TENANT_A_AUTH_SERVER_URL: http://keycloak:8080
+      KC_TENANT_B_AUTH_SERVER_URL: http://keycloak:8080
+      KC_TENANT_A_CLIENT_ID: nest-api
+      KC_TENANT_B_CLIENT_ID: nest-api
+      KC_TENANT_A_CLIENT_SECRET: kJuDbNnpAy2DuMSkLsl5Xx9XZ7nP86FS
+      KC_TENANT_B_CLIENT_SECRET: 4o4O7jt58LKCBcPb6kdTnzsRY0bLMcX0
+    ports:
+      - "3000:3000"
+
+  keycloak-db:
+    image: postgres:16-alpine
+    container_name: nkc-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.6
+    container_name: nkc-keycloak
+    restart: unless-stopped
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    command:
+      - start-dev
+      - --import-realm
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./realm-export/nest-example-realm.json:/opt/keycloak/data/import/nest-example-realm.json:ro
+      - ./realm-export/tenant-a-realm.json:/opt/keycloak/data/import/tenant-a-realm.json:ro
+      - ./realm-export/tenant-b-realm.json:/opt/keycloak/data/import/tenant-b-realm.json:ro
+      - ./realm-export:/opt/keycloak/data/export
+
+volumes:
+  keycloak-db-data:
