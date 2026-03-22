@@ -86,7 +86,7 @@
     "@types/node": "^18.19.23",
     "axios": "^1.7.0",
     "class-transformer": "0.5.1",
-    "class-validator": "0.14.1",
+    "class-validator": "0.15.1",
     "cpr": "3.0.1",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "9.1.0",
