@@ -6,6 +6,117 @@
   },
   "item": [
     {
+      "name": "Unauthenticated",
+      "item": [
+        {
+          "name": "Public / Hello (Expected 200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/",
+              "host": ["{{apiBaseUrl}}"],
+              "path": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.expect(data).to.have.property('message');",
+                  "pm.expect(data.authenticated).to.eql(false);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Auth / Private (Expected 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/private",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["private"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product / List (Expected 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBaseUrl}}/product",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Public / Tenant Hint (Expected 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-tenant-realm",
+                "value": "{{tenantARealm}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBaseUrl}}/tenant",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["tenant"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.tenantRealmHeader).to.eql(pm.collectionVariables.get('tenantARealm'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "DefaultUser",
       "item": [
         {
@@ -13,62 +124,24 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Host",
-                "value": "{{kcIssuerHost}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/x-www-form-urlencoded"
-              }
+              { "key": "Host", "value": "{{kcIssuerHost}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
             ],
             "body": {
               "mode": "urlencoded",
               "urlencoded": [
-                {
-                  "key": "grant_type",
-                  "value": "password",
-                  "type": "text"
-                },
-                {
-                  "key": "scope",
-                  "value": "openid profile email",
-                  "type": "text"
-                },
-                {
-                  "key": "client_id",
-                  "value": "{{userTokenClientId}}",
-                  "type": "text"
-                },
-                {
-                  "key": "client_secret",
-                  "value": "{{userTokenClientSecret}}",
-                  "type": "text"
-                },
-                {
-                  "key": "username",
-                  "value": "{{defaultUserUsername}}",
-                  "type": "text"
-                },
-                {
-                  "key": "password",
-                  "value": "{{defaultUserPassword}}",
-                  "type": "text"
-                }
+                { "key": "grant_type", "value": "password", "type": "text" },
+                { "key": "scope", "value": "openid profile email", "type": "text" },
+                { "key": "client_id", "value": "{{userTokenClientId}}", "type": "text" },
+                { "key": "client_secret", "value": "{{userTokenClientSecret}}", "type": "text" },
+                { "key": "username", "value": "{{defaultUserUsername}}", "type": "text" },
+                { "key": "password", "value": "{{defaultUserPassword}}", "type": "text" }
               ]
             },
             "url": {
               "raw": "{{kcBaseUrl}}/realms/{{defaultRealm}}/protocol/openid-connect/token",
-              "host": [
-                "{{kcBaseUrl}}"
-              ],
-              "path": [
-                "realms",
-                "{{defaultRealm}}",
-                "protocol",
-                "openid-connect",
-                "token"
-              ]
+              "host": ["{{kcBaseUrl}}"],
+              "path": ["realms", "{{defaultRealm}}", "protocol", "openid-connect", "token"]
             }
           },
           "event": [
@@ -90,15 +163,13 @@
           "response": []
         },
         {
-          "name": "Public / Hello",
+          "name": "Public / Hello (Expected 200)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{apiBaseUrl}}/",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
+              "host": ["{{apiBaseUrl}}"],
               "path": []
             }
           },
@@ -118,23 +189,16 @@
           "response": []
         },
         {
-          "name": "Auth / Private",
+          "name": "Auth / Private (Expected 200)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/private",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "private"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["private"]
             }
           },
           "event": [
@@ -153,23 +217,16 @@
           "response": []
         },
         {
-          "name": "Auth / Current User",
+          "name": "Auth / Current User (Expected 200)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/me",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "me"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["me"]
             }
           },
           "event": [
@@ -188,24 +245,16 @@
           "response": []
         },
         {
-          "name": "Roles / Any",
+          "name": "Roles / Any (Expected 200)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/roles/any",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "roles",
-                "any"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["roles", "any"]
             }
           },
           "event": [
@@ -224,24 +273,16 @@
           "response": []
         },
         {
-          "name": "Roles / All",
+          "name": "Roles / All (Expected 200)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/roles/all",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "roles",
-                "all"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["roles", "all"]
             }
           },
           "event": [
@@ -264,20 +305,12 @@
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/roles/admin",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "roles",
-                "admin"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["roles", "admin"]
             }
           },
           "event": [
@@ -294,23 +327,16 @@
           "response": []
         },
         {
-          "name": "Product / List",
+          "name": "Product / List (Expected 200)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/product",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product"]
             }
           },
           "event": [
@@ -329,24 +355,16 @@
           "response": []
         },
         {
-          "name": "Product / By Code",
+          "name": "Product / By Code (Expected 200)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/product/1-00-1",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product",
-                "1-00-1"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "1-00-1"]
             }
           },
           "event": [
@@ -357,7 +375,8 @@
                 "exec": [
                   "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
                   "const data = pm.response.json();",
-                  "pm.expect(data).to.have.property('product');"
+                  "pm.expect(data).to.have.property('product');",
+                  "pm.expect(data.requestedBy).to.eql('user');"
                 ]
               }
             }
@@ -365,100 +384,16 @@
           "response": []
         },
         {
-          "name": "Product / UMA Permissions",
+          "name": "Product / UMA Decision (Expected 200)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{apiBaseUrl}}/product/uma/permissions",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product",
-                "uma",
-                "permissions"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
-                  "const data = pm.response.json();",
-                  "pm.expect(data.mode).to.eql('permissions');"
-                ]
-              }
-            }
-          ],
-          "response": []
-        },
-        {
-          "name": "Product / UMA Token",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{apiBaseUrl}}/product/uma/token/1-00-1",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product",
-                "uma",
-                "token",
-                "1-00-1"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
-                  "const data = pm.response.json();",
-                  "pm.expect(data.mode).to.eql('token');"
-                ]
-              }
-            }
-          ],
-          "response": []
-        },
-        {
-          "name": "Product / UMA Decision",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/product/uma/decision",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product",
-                "uma",
-                "decision"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "uma", "decision"]
             }
           },
           "event": [
@@ -477,36 +412,78 @@
           "response": []
         },
         {
-          "name": "Product / Create",
+          "name": "Product / UMA Permissions (Expected 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
+            ],
+            "url": {
+              "raw": "{{apiBaseUrl}}/product/uma/permissions",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "uma", "permissions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.mode).to.eql('permissions');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product / UMA Token (Expected 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
+            ],
+            "url": {
+              "raw": "{{apiBaseUrl}}/product/uma/token/1-00-1",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "uma", "token", "1-00-1"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.mode).to.eql('token');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product / Create (Expected 200)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"code\": \"1-00-4\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{apiBaseUrl}}/product",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product"]
             }
           },
           "event": [
@@ -523,37 +500,22 @@
           "response": []
         },
         {
-          "name": "Product / Update",
+          "name": "Product / Update (Expected 403)",
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"code\": \"1-00-4\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{apiBaseUrl}}/product/1-00-4",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product",
-                "1-00-4"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "1-00-4"]
             }
           },
           "event": [
@@ -562,7 +524,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('status is one of 200,204', function () { pm.expect([200,204]).to.include(pm.response.code); });"
+                  "pm.test('status is 403 - user lacks Edit scope', function () { pm.response.to.have.status(403); });"
                 ]
               }
             }
@@ -570,24 +532,16 @@
           "response": []
         },
         {
-          "name": "Product / Delete",
+          "name": "Product / Delete (Expected 403)",
           "request": {
             "method": "DELETE",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultUserToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultUserToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/product/1-00-4",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product",
-                "1-00-4"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "1-00-4"]
             }
           },
           "event": [
@@ -596,7 +550,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('status is one of 200,204', function () { pm.expect([200,204]).to.include(pm.response.code); });"
+                  "pm.test('status is 403 - user lacks Delete scope', function () { pm.response.to.have.status(403); });"
                 ]
               }
             }
@@ -613,62 +567,24 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Host",
-                "value": "{{kcIssuerHost}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/x-www-form-urlencoded"
-              }
+              { "key": "Host", "value": "{{kcIssuerHost}}" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
             ],
             "body": {
               "mode": "urlencoded",
               "urlencoded": [
-                {
-                  "key": "grant_type",
-                  "value": "password",
-                  "type": "text"
-                },
-                {
-                  "key": "scope",
-                  "value": "openid profile email",
-                  "type": "text"
-                },
-                {
-                  "key": "client_id",
-                  "value": "{{adminTokenClientId}}",
-                  "type": "text"
-                },
-                {
-                  "key": "client_secret",
-                  "value": "{{adminTokenClientSecret}}",
-                  "type": "text"
-                },
-                {
-                  "key": "username",
-                  "value": "{{defaultAdminUsername}}",
-                  "type": "text"
-                },
-                {
-                  "key": "password",
-                  "value": "{{defaultAdminPassword}}",
-                  "type": "text"
-                }
+                { "key": "grant_type", "value": "password", "type": "text" },
+                { "key": "scope", "value": "openid profile email", "type": "text" },
+                { "key": "client_id", "value": "{{adminTokenClientId}}", "type": "text" },
+                { "key": "client_secret", "value": "{{adminTokenClientSecret}}", "type": "text" },
+                { "key": "username", "value": "{{defaultAdminUsername}}", "type": "text" },
+                { "key": "password", "value": "{{defaultAdminPassword}}", "type": "text" }
               ]
             },
             "url": {
               "raw": "{{kcBaseUrl}}/realms/{{defaultRealm}}/protocol/openid-connect/token",
-              "host": [
-                "{{kcBaseUrl}}"
-              ],
-              "path": [
-                "realms",
-                "{{defaultRealm}}",
-                "protocol",
-                "openid-connect",
-                "token"
-              ]
+              "host": ["{{kcBaseUrl}}"],
+              "path": ["realms", "{{defaultRealm}}", "protocol", "openid-connect", "token"]
             }
           },
           "event": [
@@ -690,24 +606,72 @@
           "response": []
         },
         {
-          "name": "Roles / Admin",
+          "name": "Auth / Private (Expected 200)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultAdminToken}}"
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{apiBaseUrl}}/private",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["private"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.message).to.eql('Authenticated only');"
+                ]
               }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Auth / Current User (Expected 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{apiBaseUrl}}/me",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.user).to.be.an('object');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Roles / Admin (Expected 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/roles/admin",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "roles",
-                "admin"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["roles", "admin"]
             }
           },
           "event": [
@@ -726,23 +690,68 @@
           "response": []
         },
         {
-          "name": "Product / List (Admin)",
+          "name": "Roles / Any (Expected 403)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultAdminToken}}"
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{apiBaseUrl}}/roles/any",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["roles", "any"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403 - admin lacks basic role', function () { pm.response.to.have.status(403); });"
+                ]
               }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Roles / All (Expected 403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{apiBaseUrl}}/roles/all",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["roles", "all"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403 - admin lacks basic role', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product / List (Expected 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/product",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product"]
             }
           },
           "event": [
@@ -761,25 +770,45 @@
           "response": []
         },
         {
-          "name": "Product / UMA Decision (Admin)",
+          "name": "Product / By Code (Expected 200)",
           "request": {
             "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultAdminToken}}"
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{apiBaseUrl}}/product/1-00-1",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "1-00-1"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.expect(data).to.have.property('product');",
+                  "pm.expect(data.requestedBy).to.eql('admin');"
+                ]
               }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product / UMA Decision (Expected 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
             ],
             "url": {
               "raw": "{{apiBaseUrl}}/product/uma/decision",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product",
-                "uma",
-                "decision"
-              ]
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "uma", "decision"]
             }
           },
           "event": [
@@ -798,24 +827,110 @@
           "response": []
         },
         {
-          "name": "Product / Delete (Admin)",
+          "name": "Product / UMA Permissions (Expected 200)",
           "request": {
-            "method": "DELETE",
+            "method": "GET",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{defaultAdminToken}}"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
             ],
             "url": {
-              "raw": "{{apiBaseUrl}}/product/1-00-2",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "product",
-                "1-00-2"
-              ]
+              "raw": "{{apiBaseUrl}}/product/uma/permissions",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "uma", "permissions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.mode).to.eql('permissions');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product / UMA Token (Expected 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
+            ],
+            "url": {
+              "raw": "{{apiBaseUrl}}/product/uma/token/1-00-1",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "uma", "token", "1-00-1"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.mode).to.eql('token');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product / Create (Expected 200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"1-00-5\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/product",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is one of 200,201,204', function () { pm.expect([200,201,204]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Product / Update (Expected 200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"1-00-5-updated\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/product/1-00-5",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "1-00-5"]
             }
           },
           "event": [
@@ -832,27 +947,16 @@
           "response": []
         },
         {
-          "name": "Callbacks / Push Not Before (Unsigned, Expected 401/400)",
+          "name": "Product / Delete (Expected 200)",
           "request": {
-            "method": "POST",
+            "method": "DELETE",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Authorization", "value": "Bearer {{defaultAdminToken}}" }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"<SIGNED_KEYCLOAK_ADMIN_JWT>\"\n}"
-            },
             "url": {
-              "raw": "{{apiBaseUrl}}/k_push_not_before",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "k_push_not_before"
-              ]
+              "raw": "{{apiBaseUrl}}/product/1-00-5",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["product", "1-00-5"]
             }
           },
           "event": [
@@ -861,7 +965,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('status is 400/401/403 for unsigned payload', function () { pm.expect([400,401,403]).to.include(pm.response.code); });"
+                  "pm.test('status is one of 200,204', function () { pm.expect([200,204]).to.include(pm.response.code); });"
                 ]
               }
             }
@@ -869,27 +973,20 @@
           "response": []
         },
         {
-          "name": "Callbacks / Back-channel Logout (Unsigned, Expected 401/400)",
+          "name": "Callbacks / Push Not Before (Unsigned, Expected 400/401)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"logout_token\": \"<SIGNED_LOGOUT_JWT>\"\n}"
+              "raw": "{\n  \"token\": \"<SIGNED_KEYCLOAK_ADMIN_JWT>\"\n}"
             },
             "url": {
-              "raw": "{{apiBaseUrl}}/k_logout",
-              "host": [
-                "{{apiBaseUrl}}"
-              ],
-              "path": [
-                "k_logout"
-              ]
+              "raw": "{{apiBaseUrl}}/k_push_not_before",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["k_push_not_before"]
             }
           },
           "event": [
@@ -898,7 +995,37 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('status is 400/401/403 for unsigned payload', function () { pm.expect([400,401,403]).to.include(pm.response.code); });"
+                  "pm.test('status is 400 or 401 for unsigned payload', function () { pm.expect([400,401]).to.include(pm.response.code); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Callbacks / Back-channel Logout (Unsigned, Expected 400/401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"logout_token\": \"<SIGNED_LOGOUT_JWT>\"\n}"
+            },
+            "url": {
+              "raw": "{{apiBaseUrl}}/k_logout",
+              "host": ["{{apiBaseUrl}}"],
+              "path": ["k_logout"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400 or 401 for unsigned payload', function () { pm.expect([400,401]).to.include(pm.response.code); });"
                 ]
               }
             }
@@ -918,62 +1045,24 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  {
-                    "key": "Host",
-                    "value": "{{kcIssuerHost}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/x-www-form-urlencoded"
-                  }
+                  { "key": "Host", "value": "{{kcIssuerHost}}" },
+                  { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
                 ],
                 "body": {
                   "mode": "urlencoded",
                   "urlencoded": [
-                    {
-                      "key": "grant_type",
-                      "value": "password",
-                      "type": "text"
-                    },
-                    {
-                      "key": "scope",
-                      "value": "openid profile email",
-                      "type": "text"
-                    },
-                    {
-                      "key": "client_id",
-                      "value": "{{tenantTokenClientId}}",
-                      "type": "text"
-                    },
-                    {
-                      "key": "client_secret",
-                      "value": "{{tenantTokenClientSecret}}",
-                      "type": "text"
-                    },
-                    {
-                      "key": "username",
-                      "value": "{{tenantUserUsername}}",
-                      "type": "text"
-                    },
-                    {
-                      "key": "password",
-                      "value": "{{tenantUserPassword}}",
-                      "type": "text"
-                    }
+                    { "key": "grant_type", "value": "password", "type": "text" },
+                    { "key": "scope", "value": "openid profile email", "type": "text" },
+                    { "key": "client_id", "value": "{{tenantTokenClientId}}", "type": "text" },
+                    { "key": "client_secret", "value": "{{tenantTokenClientSecret}}", "type": "text" },
+                    { "key": "username", "value": "{{tenantUserUsername}}", "type": "text" },
+                    { "key": "password", "value": "{{tenantUserPassword}}", "type": "text" }
                   ]
                 },
                 "url": {
                   "raw": "{{kcBaseUrl}}/realms/{{tenantARealm}}/protocol/openid-connect/token",
-                  "host": [
-                    "{{kcBaseUrl}}"
-                  ],
-                  "path": [
-                    "realms",
-                    "{{tenantARealm}}",
-                    "protocol",
-                    "openid-connect",
-                    "token"
-                  ]
+                  "host": ["{{kcBaseUrl}}"],
+                  "path": ["realms", "{{tenantARealm}}", "protocol", "openid-connect", "token"]
                 }
               },
               "event": [
@@ -995,23 +1084,16 @@
               "response": []
             },
             {
-              "name": "Public / Tenant Hint (Tenant A)",
+              "name": "Public / Tenant Hint (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantARealm}}"
-                  }
+                  { "key": "x-tenant-realm", "value": "{{tenantARealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/tenant",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "tenant"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["tenant"]
                 }
               },
               "event": [
@@ -1030,27 +1112,17 @@
               "response": []
             },
             {
-              "name": "Auth / Private (Tenant A)",
+              "name": "Auth / Private (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantAToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantARealm}}"
-                  }
+                  { "key": "Authorization", "value": "Bearer {{tenantAToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantARealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/private",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "private"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["private"]
                 }
               },
               "event": [
@@ -1069,28 +1141,17 @@
               "response": []
             },
             {
-              "name": "Roles / Any (Tenant A)",
+              "name": "Roles / Any (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantAToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantARealm}}"
-                  }
+                  { "key": "Authorization", "value": "Bearer {{tenantAToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantARealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/roles/any",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "roles",
-                    "any"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["roles", "any"]
                 }
               },
               "event": [
@@ -1109,27 +1170,17 @@
               "response": []
             },
             {
-              "name": "Product / List (Tenant A)",
+              "name": "Product / List (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantAToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantARealm}}"
-                  }
+                  { "key": "Authorization", "value": "Bearer {{tenantAToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantARealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/product",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "product"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["product"]
                 }
               },
               "event": [
@@ -1148,29 +1199,47 @@
               "response": []
             },
             {
-              "name": "Product / UMA Permissions (Tenant A)",
+              "name": "Product / UMA Decision (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantAToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantARealm}}"
+                  { "key": "Authorization", "value": "Bearer {{tenantAToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantARealm}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBaseUrl}}/product/uma/decision",
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["product", "uma", "decision"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                      "const data = pm.response.json();",
+                      "pm.expect(data.mode).to.eql('decision');",
+                      "pm.expect(data.tenantRealm).to.eql(pm.collectionVariables.get('tenantARealm'));"
+                    ]
                   }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Product / UMA Permissions (Expected 200)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{tenantAToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantARealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/product/uma/permissions",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "product",
-                    "uma",
-                    "permissions"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["product", "uma", "permissions"]
                 }
               },
               "event": [
@@ -1189,30 +1258,17 @@
               "response": []
             },
             {
-              "name": "Product / UMA Token (Tenant A)",
+              "name": "Product / UMA Token (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantAToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantARealm}}"
-                  }
+                  { "key": "Authorization", "value": "Bearer {{tenantAToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantARealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/product/uma/token/1-00-1",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "product",
-                    "uma",
-                    "token",
-                    "1-00-1"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["product", "uma", "token", "1-00-1"]
                 }
               },
               "event": [
@@ -1229,48 +1285,6 @@
                 }
               ],
               "response": []
-            },
-            {
-              "name": "Product / UMA Decision (Tenant A)",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantAToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantARealm}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{apiBaseUrl}}/product/uma/decision",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "product",
-                    "uma",
-                    "decision"
-                  ]
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
-                      "const data = pm.response.json();",
-                      "pm.expect(data.mode).to.eql('decision');",
-                      "pm.expect(data.tenantRealm).to.eql(pm.collectionVariables.get('tenantARealm'));"
-                    ]
-                  }
-                }
-              ],
-              "response": []
             }
           ]
         },
@@ -1282,62 +1296,24 @@
               "request": {
                 "method": "POST",
                 "header": [
-                  {
-                    "key": "Host",
-                    "value": "{{kcIssuerHost}}"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/x-www-form-urlencoded"
-                  }
+                  { "key": "Host", "value": "{{kcIssuerHost}}" },
+                  { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
                 ],
                 "body": {
                   "mode": "urlencoded",
                   "urlencoded": [
-                    {
-                      "key": "grant_type",
-                      "value": "password",
-                      "type": "text"
-                    },
-                    {
-                      "key": "scope",
-                      "value": "openid profile email",
-                      "type": "text"
-                    },
-                    {
-                      "key": "client_id",
-                      "value": "{{tenantTokenClientId}}",
-                      "type": "text"
-                    },
-                    {
-                      "key": "client_secret",
-                      "value": "{{tenantTokenClientSecret}}",
-                      "type": "text"
-                    },
-                    {
-                      "key": "username",
-                      "value": "{{tenantUserUsername}}",
-                      "type": "text"
-                    },
-                    {
-                      "key": "password",
-                      "value": "{{tenantUserPassword}}",
-                      "type": "text"
-                    }
+                    { "key": "grant_type", "value": "password", "type": "text" },
+                    { "key": "scope", "value": "openid profile email", "type": "text" },
+                    { "key": "client_id", "value": "{{tenantTokenClientId}}", "type": "text" },
+                    { "key": "client_secret", "value": "{{tenantTokenClientSecret}}", "type": "text" },
+                    { "key": "username", "value": "{{tenantUserUsername}}", "type": "text" },
+                    { "key": "password", "value": "{{tenantUserPassword}}", "type": "text" }
                   ]
                 },
                 "url": {
                   "raw": "{{kcBaseUrl}}/realms/{{tenantBRealm}}/protocol/openid-connect/token",
-                  "host": [
-                    "{{kcBaseUrl}}"
-                  ],
-                  "path": [
-                    "realms",
-                    "{{tenantBRealm}}",
-                    "protocol",
-                    "openid-connect",
-                    "token"
-                  ]
+                  "host": ["{{kcBaseUrl}}"],
+                  "path": ["realms", "{{tenantBRealm}}", "protocol", "openid-connect", "token"]
                 }
               },
               "event": [
@@ -1359,23 +1335,16 @@
               "response": []
             },
             {
-              "name": "Public / Tenant Hint (Tenant B)",
+              "name": "Public / Tenant Hint (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantBRealm}}"
-                  }
+                  { "key": "x-tenant-realm", "value": "{{tenantBRealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/tenant",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "tenant"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["tenant"]
                 }
               },
               "event": [
@@ -1394,27 +1363,17 @@
               "response": []
             },
             {
-              "name": "Auth / Private (Tenant B)",
+              "name": "Auth / Private (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantBToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantBRealm}}"
-                  }
+                  { "key": "Authorization", "value": "Bearer {{tenantBToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantBRealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/private",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "private"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["private"]
                 }
               },
               "event": [
@@ -1433,28 +1392,17 @@
               "response": []
             },
             {
-              "name": "Roles / Any (Tenant B)",
+              "name": "Roles / Any (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantBToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantBRealm}}"
-                  }
+                  { "key": "Authorization", "value": "Bearer {{tenantBToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantBRealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/roles/any",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "roles",
-                    "any"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["roles", "any"]
                 }
               },
               "event": [
@@ -1473,27 +1421,17 @@
               "response": []
             },
             {
-              "name": "Product / List (Tenant B)",
+              "name": "Product / List (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantBToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantBRealm}}"
-                  }
+                  { "key": "Authorization", "value": "Bearer {{tenantBToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantBRealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/product",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "product"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["product"]
                 }
               },
               "event": [
@@ -1512,29 +1450,47 @@
               "response": []
             },
             {
-              "name": "Product / UMA Permissions (Tenant B)",
+              "name": "Product / UMA Decision (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantBToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantBRealm}}"
+                  { "key": "Authorization", "value": "Bearer {{tenantBToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantBRealm}}" }
+                ],
+                "url": {
+                  "raw": "{{apiBaseUrl}}/product/uma/decision",
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["product", "uma", "decision"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                      "const data = pm.response.json();",
+                      "pm.expect(data.mode).to.eql('decision');",
+                      "pm.expect(data.tenantRealm).to.eql(pm.collectionVariables.get('tenantBRealm'));"
+                    ]
                   }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Product / UMA Permissions (Expected 200)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{tenantBToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantBRealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/product/uma/permissions",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "product",
-                    "uma",
-                    "permissions"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["product", "uma", "permissions"]
                 }
               },
               "event": [
@@ -1553,30 +1509,17 @@
               "response": []
             },
             {
-              "name": "Product / UMA Token (Tenant B)",
+              "name": "Product / UMA Token (Expected 200)",
               "request": {
                 "method": "GET",
                 "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantBToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantBRealm}}"
-                  }
+                  { "key": "Authorization", "value": "Bearer {{tenantBToken}}" },
+                  { "key": "x-tenant-realm", "value": "{{tenantBRealm}}" }
                 ],
                 "url": {
                   "raw": "{{apiBaseUrl}}/product/uma/token/1-00-1",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "product",
-                    "uma",
-                    "token",
-                    "1-00-1"
-                  ]
+                  "host": ["{{apiBaseUrl}}"],
+                  "path": ["product", "uma", "token", "1-00-1"]
                 }
               },
               "event": [
@@ -1593,48 +1536,6 @@
                 }
               ],
               "response": []
-            },
-            {
-              "name": "Product / UMA Decision (Tenant B)",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{tenantBToken}}"
-                  },
-                  {
-                    "key": "x-tenant-realm",
-                    "value": "{{tenantBRealm}}"
-                  }
-                ],
-                "url": {
-                  "raw": "{{apiBaseUrl}}/product/uma/decision",
-                  "host": [
-                    "{{apiBaseUrl}}"
-                  ],
-                  "path": [
-                    "product",
-                    "uma",
-                    "decision"
-                  ]
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
-                      "const data = pm.response.json();",
-                      "pm.expect(data.mode).to.eql('decision');",
-                      "pm.expect(data.tenantRealm).to.eql(pm.collectionVariables.get('tenantBRealm'));"
-                    ]
-                  }
-                }
-              ],
-              "response": []
             }
           ]
         }
@@ -1643,97 +1544,28 @@
   ],
   "event": [],
   "variable": [
-    {
-      "key": "apiBaseUrl",
-      "value": "http://localhost:3000"
-    },
-    {
-      "key": "kcBaseUrl",
-      "value": "http://localhost:8080"
-    },
-    {
-      "key": "kcIssuerHost",
-      "value": "keycloak:8080"
-    },
-    {
-      "key": "userTokenClientId",
-      "value": "postman"
-    },
-    {
-      "key": "userTokenClientSecret",
-      "value": ""
-    },
-    {
-      "key": "adminTokenClientId",
-      "value": "postman"
-    },
-    {
-      "key": "adminTokenClientSecret",
-      "value": ""
-    },
-    {
-      "key": "tenantTokenClientId",
-      "value": "postman"
-    },
-    {
-      "key": "tenantTokenClientSecret",
-      "value": ""
-    },
-    {
-      "key": "defaultRealm",
-      "value": "nest-example"
-    },
-    {
-      "key": "defaultUserUsername",
-      "value": "user"
-    },
-    {
-      "key": "defaultUserPassword",
-      "value": "user"
-    },
-    {
-      "key": "defaultAdminUsername",
-      "value": "admin"
-    },
-    {
-      "key": "defaultAdminPassword",
-      "value": "admin"
-    },
-    {
-      "key": "tenantARealm",
-      "value": "tenant-a"
-    },
-    {
-      "key": "tenantBRealm",
-      "value": "tenant-b"
-    },
-    {
-      "key": "tenantUserUsername",
-      "value": "user"
-    },
-    {
-      "key": "tenantUserPassword",
-      "value": "user"
-    },
-    {
-      "key": "defaultUserToken",
-      "value": ""
-    },
-    {
-      "key": "defaultAdminToken",
-      "value": ""
-    },
-    {
-      "key": "tenantAToken",
-      "value": ""
-    },
-    {
-      "key": "tenantBToken",
-      "value": ""
-    },
-    {
-      "key": "activeToken",
-      "value": ""
-    }
+    { "key": "apiBaseUrl", "value": "http://localhost:3000" },
+    { "key": "kcBaseUrl", "value": "http://localhost:8080" },
+    { "key": "kcIssuerHost", "value": "keycloak:8080" },
+    { "key": "userTokenClientId", "value": "postman" },
+    { "key": "userTokenClientSecret", "value": "" },
+    { "key": "adminTokenClientId", "value": "postman" },
+    { "key": "adminTokenClientSecret", "value": "" },
+    { "key": "tenantTokenClientId", "value": "postman" },
+    { "key": "tenantTokenClientSecret", "value": "" },
+    { "key": "defaultRealm", "value": "nest-example" },
+    { "key": "defaultUserUsername", "value": "user" },
+    { "key": "defaultUserPassword", "value": "user" },
+    { "key": "defaultAdminUsername", "value": "admin" },
+    { "key": "defaultAdminPassword", "value": "admin" },
+    { "key": "tenantARealm", "value": "tenant-a" },
+    { "key": "tenantBRealm", "value": "tenant-b" },
+    { "key": "tenantUserUsername", "value": "user" },
+    { "key": "tenantUserPassword", "value": "user" },
+    { "key": "defaultUserToken", "value": "" },
+    { "key": "defaultAdminToken", "value": "" },
+    { "key": "tenantAToken", "value": "" },
+    { "key": "tenantBToken", "value": "" },
+    { "key": "activeToken", "value": "" }
   ]
 }
