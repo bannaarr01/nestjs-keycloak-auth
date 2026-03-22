@@ -26,9 +26,25 @@
   },
   "keywords": [
     "nestjs",
+    "nest",
     "keycloak",
-    "typescript"
+    "nest-keycloak",
+    "keycloak-nest",
+    "typescript",
+    "authentication",
+    "authorization",
+    "oauth2",
+    "openid-connect",
+    "oidc",
+    "rbac",
+    "guard",
+    "uma",
+    "multi-tenant",
+    "jwt",
+    "sso",
+    "access-control"
   ],
+  "homepage": "https://github.com/bannaarr01/nestjs-keycloak-auth#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/bannaarr01/nestjs-keycloak-auth"
