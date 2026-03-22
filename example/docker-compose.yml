@@ -1,8 +1,6 @@
 services:
   nest-api:
-    build:
-      context: ..
-      dockerfile: example/Dockerfile
+    build: .
     container_name: nkc-api
     restart: unless-stopped
     depends_on:

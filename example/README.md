@@ -35,9 +35,6 @@ Default sample users in this realm export:
 ## Install
 
 ```bash
-cd ..
-npm run build
-cd example
 npm install
 ```
 
