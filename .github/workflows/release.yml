@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build, Publish & Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout
+
+      - uses: actions/setup-node@v4
+        name: Install Node.js
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - run: npm ci
+        name: Install dependencies
+
+      - run: npm run build
+        name: Build
+
+      - run: npm run lint
+        name: Lint
+
+      - run: npm run test:cov
+        name: Test
+
+      - run: npm pack
+        name: Pack tarball
+
+      - run: shasum -a 256 *.tgz > SHA256SUMS.txt
+        name: Generate checksums
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            *.tgz
+            SHA256SUMS.txt
+
+      - run: npm publish --provenance --access public
+        name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
