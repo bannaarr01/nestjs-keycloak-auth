@@ -7,8 +7,6 @@
 
 A bearer-only Keycloak authentication and authorization module for [NestJS](https://nestjs.com/). Uses standard OIDC discovery and has zero runtime dependency on `keycloak-connect`.
 
-> **Attribution:** This project is a fork of [nest-keycloak-connect](https://github.com/ferrerojosh/nest-keycloak-connect) by [John Joshua Ferrer](https://github.com/ferrerojosh). Licensed under MIT.
-
 </div>
 
 ## Features
@@ -16,9 +14,12 @@ A bearer-only Keycloak authentication and authorization module for [NestJS](http
 - Bearer-token API authentication and authorization for NestJS.
 - OIDC discovery — endpoints resolved from `.well-known/openid-configuration` (with fallback).
 - ONLINE and OFFLINE token validation (introspection + JWKS signature verification).
+- Algorithm allowlist — only RS, ES, and PS family algorithms are accepted during offline validation.
 - Per-realm `notBefore` revocation state for multi-tenant safety.
 - Resource/scope authorization via UMA (`@Resource`, `@Scopes`, `@ConditionalScopes`).
 - Role authorization (`@Roles`) with configurable role merge and match modes.
+- OIDC back-channel logout (`sid`/`sub` revocation).
+- Typed error hierarchy — all library errors extend `KeycloakAuthError` for easy catching.
 - Compatible with [Fastify](https://github.com/fastify/fastify) platform.
 
 ## Runtime Scope (Important)
@@ -140,7 +141,7 @@ providers: [
 export class CatsController {}
 ```
 
-## What does these providers do ?
+## What do these guards do?
 
 ### AuthGuard
 
@@ -229,7 +230,7 @@ export class ProductController {
 
 ## Decorators
 
-Here is the decorators you can use in your controllers.
+Here are the decorators you can use in your controllers.
 
 | Decorator          | Description                                                                                               |
 | ------------------ | --------------------------------------------------------------------------------------------------------- |
@@ -242,6 +243,7 @@ Here is the decorators you can use in your controllers.
 | @Scopes            | Keycloak application scopes.                                                                              |
 | @ConditionalScopes | Conditional keycloak application scopes.                                                                  |
 | @Roles             | Keycloak realm/application roles.                                                                         |
+| @TokenScopes       | Required OAuth scopes on the access token.                                                                |
 
 ## Multi tenant configuration
 
@@ -275,7 +277,7 @@ Setting up for multi-tenant is configured as an option in your configuration:
 }
 ```
 
-## Admin callback endpoint
+## Admin callback endpoints
 
 This module mounts Keycloak admin callback endpoints:
 
@@ -292,10 +294,33 @@ Purpose:
 Realm resolution for callback verification:
 
 1. `multiTenant.realmResolver(request)` when configured
-2. single-tenant configured realm (`realm`)
-3. fallback to callback token issuer (`iss`) realm
+2. Single-tenant configured realm (`realm`)
 
 `k_logout` here is callback-only revocation handling for bearer tokens. It does not add browser/session middleware flows.
+
+## Error handling
+
+All errors thrown by the library extend `KeycloakAuthError`, so you can catch any library error with a single `instanceof` check:
+
+```typescript
+import {
+  KeycloakAuthError,
+  KeycloakConfigError,
+  KeycloakTokenError,
+  KeycloakPermissionError,
+  KeycloakAdminError,
+} from 'nestjs-keycloak-auth';
+```
+
+| Error class              | Code                        | When                                                     |
+| ------------------------ | --------------------------- | -------------------------------------------------------- |
+| `KeycloakAuthError`      | `KEYCLOAK_AUTH_ERROR`       | Base class — catches all library errors via `instanceof` |
+| `KeycloakConfigError`    | `KEYCLOAK_CONFIG_ERROR`     | Missing config, invalid options, file not found          |
+| `KeycloakTokenError`     | `KEYCLOAK_TOKEN_ERROR`      | Malformed JWT, grant validation failure, JWKS key miss   |
+| `KeycloakPermissionError`| `KEYCLOAK_PERMISSION_ERROR` | UMA permission check failure                             |
+| `KeycloakAdminError`     | `KEYCLOAK_ADMIN_ERROR`      | Admin callback signature/token verification failure      |
+
+Guards continue to throw standard NestJS `UnauthorizedException` / `ForbiddenException` at the HTTP boundary.
 
 ## Testing
 
@@ -341,6 +366,10 @@ Current test setup uses Jest + ts-jest and is configured to enforce 100% global 
 | realmAuthServerUrlResolver | Resolves auth server URL by realm (and optional request)                                                  | no       | -       |
 | realmClientIdResolver      | Resolves client ID by realm (and optional request)                                                        | yes      | -       |
 
-## Example app
+## Acknowledgements
 
-An [example application](example) is provided in the source code with both Keycloak Realm and Postman requests for you to experiment with.
+Inspired by [nest-keycloak-connect](https://github.com/ferrerojosh/nest-keycloak-connect) by [John Joshua Ferrer](https://github.com/ferrerojosh) and the official [keycloak-nodejs-connect](https://github.com/keycloak/keycloak-nodejs-connect) adapter.
+
+## License
+
+[MIT](LICENSE)
