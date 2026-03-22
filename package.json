@@ -55,8 +55,8 @@
   },
   "peerDependencies": {
     "@nestjs/axios": ">=3.0.0",
-    "@nestjs/common": ">=6.0.0 <12.0.0",
-    "@nestjs/core": ">=6.0.0 <12.0.0",
+    "@nestjs/common": ">=10.0.0 <12.0.0",
+    "@nestjs/core": ">=10.0.0 <12.0.0",
     "axios": ">=1.0.0"
   },
   "devDependencies": {
@@ -81,7 +81,7 @@
     "lint-staged": "^15.5.2",
     "prettier": "3.2.5",
     "reflect-metadata": "0.2.1",
-    "release-it": "17.1.1",
+    "release-it": "^19.2.4",
     "rimraf": "3.0.2",
     "rxjs": "7.8.1",
     "ts-jest": "^29.4.6",
@@ -104,5 +104,10 @@
     "**/*.ts": [
       "eslint"
     ]
+  },
+  "overrides": {
+    "release-it": {
+      "undici": "^7.0.0"
+    }
   }
 }
