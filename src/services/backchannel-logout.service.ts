@@ -38,9 +38,14 @@ export class BackchannelLogoutService {
 
    /**
    * Check whether a session or user has been revoked.
+   * @param sid  Session ID from the token
+   * @param sub  Subject (user ID) from the token
+   * @param iat  Issued-at timestamp (seconds) from the token — tokens issued
+   *             after the revocation are from a new session and should be allowed.
    */
-   isRevoked(sid?: string, sub?: string): boolean {
+   isRevoked(sid?: string, sub?: string, iat?: number): boolean {
       const cutoff = Date.now() - this.ttlMs;
+      const issuedAtMs = iat ? iat * 1000 : 0;
 
       if (sid) {
          const revokedAt = this.revokedSessions.get(sid);
@@ -58,6 +63,9 @@ export class BackchannelLogoutService {
          if (revokedAt !== undefined) {
             if (revokedAt < cutoff) {
                this.revokedUsers.delete(sub);
+            } else if (issuedAtMs > revokedAt) {
+               // Token was issued after the revocation — new session, allow it
+               return false;
             } else {
                return true;
             }

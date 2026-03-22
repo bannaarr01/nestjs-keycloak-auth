@@ -51,6 +51,24 @@ describe('BackchannelLogoutService', () => {
       expect(revokedUsers.has('new-sub')).toBe(true);
    });
 
+   it('allows tokens issued after user revocation (new session)', () => {
+      const revokeTime = 1_000_000;
+      jest.spyOn(Date, 'now').mockReturnValue(revokeTime);
+      const service = new BackchannelLogoutService();
+      service.revoke('old-sid', 'user-sub');
+
+      // Token issued before revocation — should be revoked
+      const iatBefore = (revokeTime - 5000) / 1000; // seconds
+      expect(service.isRevoked('other-sid', 'user-sub', iatBefore)).toBe(true);
+
+      // Token issued after revocation — new session, should be allowed
+      const iatAfter = (revokeTime + 5000) / 1000; // seconds
+      expect(service.isRevoked('new-sid', 'user-sub', iatAfter)).toBe(false);
+
+      // Old session ID is still revoked regardless of iat
+      expect(service.isRevoked('old-sid', 'user-sub', iatAfter)).toBe(true);
+   });
+
    it('removes stale sid/sub entries during isRevoked checks', () => {
       const service = new BackchannelLogoutService();
       const revokedSessions = getPrivate<Map<string, number>>(service, 'revokedSessions');

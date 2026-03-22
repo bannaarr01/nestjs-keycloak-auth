@@ -101,10 +101,14 @@ export class KeycloakConfigService implements KeycloakAuthOptionsFactory {
     if (host) {
       const normalizedHost = host.split(':')[0];
       const firstSegment = normalizedHost.split('.')[0];
-      if (
-        firstSegment &&
-        !['localhost', '127', '127.0.0.1', 'api'].includes(firstSegment)
-      ) {
+      // Ignore hostnames that are Docker service/container names, not tenant
+      // realms. Without this, Keycloak admin callbacks (k_logout,
+      // k_push_not_before) sent to the Admin URL would be misinterpreted
+      // as tenant realm names.
+      // Docker Compose: service "nest-api" / container "nkc-api"
+      // (see example/docker-compose.yml)
+      const ignoredHosts = ['localhost', '127', '127.0.0.1', 'api', 'nkc-api', 'nest-api'];
+      if (firstSegment && !ignoredHosts.includes(firstSegment)) {
         return firstSegment;
       }
     }

@@ -1,8 +1,8 @@
 import { parseToken } from '../util';
 import { Reflector } from '@nestjs/core';
 import { META_PUBLIC } from '../decorators/public.decorator';
-import { META_TOKEN_SCOPES } from '../decorators/token-scopes.decorator';
 import { extractRequest, useTenantConfig } from '../internal.util';
+import { META_TOKEN_SCOPES } from '../decorators/token-scopes.decorator';
 import { KeycloakGrantService } from '../services/keycloak-grant.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { TokenValidationService } from '../services/token-validation.service';
@@ -94,7 +94,8 @@ export class AuthGuard implements CanActivate {
          // Check back-channel logout revocation
          const sid = request.user?.sid as string | undefined;
          const sub = request.user?.sub as string | undefined;
-         if (this.backchannelLogout.isRevoked(sid, sub)) {
+         const iat = request.user?.iat as number | undefined;
+         if (this.backchannelLogout.isRevoked(sid, sub, iat)) {
             this.logger.verbose('Session or user has been revoked via back-channel logout');
             if (isPublic) {
                request.user = undefined;
