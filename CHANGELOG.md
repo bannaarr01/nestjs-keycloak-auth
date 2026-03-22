@@ -1,0 +1,14 @@
+# Changelog
+
+# 1.0.0 (2026-03-22)
+
+
+### Bug Fixes
+
+* allows tokens issued after user revocation (new session) ([e6ce2b6](https://github.com/bannaarr01/nestjs-keycloak-auth/commit/e6ce2b68261b3fd338365d6e05e853874faf8871))
+* claim format ([c3fdb35](https://github.com/bannaarr01/nestjs-keycloak-auth/commit/c3fdb3542a881b8ce7a7721bf22754e02dd1f12f))
+
+
+### Features
+
+* Back-channel logout + OAuth2 token scope validation ([9b2205d](https://github.com/bannaarr01/nestjs-keycloak-auth/commit/9b2205df3cbbcdba0c6e38990b232461fccd8dc5))
