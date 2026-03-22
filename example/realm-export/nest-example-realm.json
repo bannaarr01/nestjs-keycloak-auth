@@ -417,8 +417,8 @@
       "id" : "a6438450-6d66-47d9-83d6-35f753c19890",
       "type" : "password",
       "createdDate" : 1619729492367,
-      "secretData" : "{\"value\":\"C10N6iHXgLyO+Vlx/OlOAIOQTRAXJxND9GgLrsifquubsqHohXTj4CxmZHprV+q02580NWN5eFPXjesTGDhNcg==\",\"salt\":\"H+GT8T/NZgjRtx8A+mMvIQ==\",\"additionalParameters\":{}}",
-      "credentialData" : "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
+      "secretData" : "{\"value\":\"KevTV9RIrC/SH/Bt/6m7l4e0RXo73XqjtkhfEj9HWes=\",\"salt\":\"ZLLAUhUGNIbKCL1FaILwJg==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
     } ],
     "disableableCredentialTypes" : [ ],
     "requiredActions" : [ ],
@@ -448,7 +448,7 @@
     "firstName" : "User",
     "lastName" : "NestApi",
     "email" : "user@nestapi.local",
-    "emailVerified" : false,
+    "emailVerified" : true,
     "enabled" : true,
     "createdTimestamp" : 1619729366867,
     "totp" : false,
@@ -723,9 +723,9 @@
         "attributes" : { },
         "uris" : [ ],
         "scopes" : [ {
-          "name" : "Delete"
-        }, {
           "name" : "Create"
+        }, {
+          "name" : "Delete"
         }, {
           "name" : "View.All"
         }, {
@@ -782,7 +782,7 @@
         "logic" : "POSITIVE",
         "decisionStrategy" : "UNANIMOUS",
         "config" : {
-          "scopes" : "[\"Edit\",\"Delete\",\"Create\",\"View\"]",
+          "scopes" : "[\"View.All\",\"Edit\",\"Create\",\"Delete\",\"View\"]",
           "applyPolicies" : "[\"Admin Policy\"]"
         }
       } ],
@@ -842,6 +842,21 @@
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
     "nodeReRegistrationTimeout" : -1,
+    "protocolMappers" : [ {
+      "id" : "77d3f749-4e3f-4efb-ac1b-1d33b2eace46",
+      "name" : "nest-api-audience",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-audience-mapper",
+      "consentRequired" : false,
+      "config" : {
+        "included.client.audience" : "nest-api",
+        "id.token.claim" : "false",
+        "lightweight.claim" : "false",
+        "introspection.token.claim" : "true",
+        "access.token.claim" : "true",
+        "userinfo.token.claim" : "false"
+      }
+    } ],
     "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "basic", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
   }, {
@@ -1511,7 +1526,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "saml-user-property-mapper", "oidc-usermodel-property-mapper", "saml-user-attribute-mapper", "saml-role-list-mapper", "oidc-full-name-mapper", "oidc-usermodel-attribute-mapper", "oidc-sha256-pairwise-sub-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "saml-user-property-mapper", "oidc-full-name-mapper", "oidc-usermodel-attribute-mapper", "oidc-usermodel-property-mapper", "saml-role-list-mapper" ]
       }
     }, {
       "id" : "a4399080-97a9-4068-93e0-49ecbdc714ff",
@@ -1555,7 +1570,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "saml-user-property-mapper", "oidc-address-mapper", "saml-user-attribute-mapper", "oidc-usermodel-property-mapper", "oidc-usermodel-attribute-mapper", "saml-role-list-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-usermodel-property-mapper", "saml-user-property-mapper", "saml-user-attribute-mapper", "saml-role-list-mapper", "oidc-usermodel-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "oidc-address-mapper" ]
       }
     }, {
       "id" : "cca0d4fc-8d68-4d1a-ba66-b0b5d73cc64c",
