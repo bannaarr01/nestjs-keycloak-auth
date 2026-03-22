@@ -18,12 +18,14 @@ For full Keycloak configuration steps (including callbacks and multi-tenant), se
 
 ## Included Realm Export
 
-Compose imports all exported realms from [`realm-export/`](./realm-export/):
+Compose imports these realm files from [`realm-export/`](./realm-export/):
 
-- `master-realm.json`
 - `nest-example-realm.json`
 - `tenant-a-realm.json`
 - `tenant-b-realm.json`
+
+`master-realm.json` is kept for backup/reference only and is not auto-imported on startup.
+This avoids a duplicate `admin` user conflict with bootstrap admin creation.
 
 Default sample users in this realm export:
 
@@ -71,8 +73,8 @@ What this does:
 - Builds and starts example API on `http://localhost:3000`
 - Starts pinned Keycloak (`quay.io/keycloak/keycloak:26.5.6`) on `http://localhost:8080`
 - Starts Postgres for Keycloak storage
-- Uses admin credentials `admin` / `admin`
-- Auto-imports all realm files in [`realm-export/`](./realm-export/) on startup
+- Uses bootstrap admin credentials `admin` / `admin`
+- Auto-imports `nest-example`, `tenant-a`, and `tenant-b` realm files only
 
 ## Generate a Fresh Realm Export (Latest Keycloak Format)
 

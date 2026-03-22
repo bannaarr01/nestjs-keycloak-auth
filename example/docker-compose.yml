@@ -55,15 +55,17 @@ services:
       KC_DB_PASSWORD: keycloak
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
     command:
       - start-dev
       - --import-realm
     ports:
       - "8080:8080"
     volumes:
-      - ./realm-export:/opt/keycloak/data/import:ro
+      - ./realm-export/nest-example-realm.json:/opt/keycloak/data/import/nest-example-realm.json:ro
+      - ./realm-export/tenant-a-realm.json:/opt/keycloak/data/import/tenant-a-realm.json:ro
+      - ./realm-export/tenant-b-realm.json:/opt/keycloak/data/import/tenant-b-realm.json:ro
       - ./realm-export:/opt/keycloak/data/export
 
 volumes:
