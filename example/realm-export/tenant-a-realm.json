@@ -671,9 +671,9 @@
         "attributes" : { },
         "uris" : [ ],
         "scopes" : [ {
-          "name" : "Delete"
-        }, {
           "name" : "Create"
+        }, {
+          "name" : "Delete"
         }, {
           "name" : "View.All"
         }, {
@@ -739,7 +739,7 @@
         "decisionStrategy" : "UNANIMOUS",
         "config" : {
           "resources" : "[\"Product\"]",
-          "scopes" : "[\"Delete\",\"View\",\"Create\",\"View.All\",\"Edit\"]",
+          "scopes" : "[\"Create\",\"View\",\"Delete\",\"Edit\",\"View.All\"]",
           "applyPolicies" : "[\"Admin Policy\"]"
         }
       } ],
@@ -759,7 +759,7 @@
         "name" : "View.All",
         "iconUri" : ""
       } ],
-      "decisionStrategy" : "UNANIMOUS"
+      "decisionStrategy" : "AFFIRMATIVE"
     }
   }, {
     "id" : "e45a29fc-be17-4a91-b855-bc6e4e64f904",
@@ -767,7 +767,7 @@
     "name" : "",
     "description" : "",
     "rootUrl" : "",
-    "adminUrl" : "",
+    "adminUrl" : "http://nest-api:3000",
     "baseUrl" : "",
     "surrogateAuthRequired" : false,
     "enabled" : true,
@@ -783,13 +783,14 @@
     "directAccessGrantsEnabled" : true,
     "serviceAccountsEnabled" : false,
     "publicClient" : true,
-    "frontchannelLogout" : true,
+    "frontchannelLogout" : false,
     "protocol" : "openid-connect",
     "attributes" : {
       "realm_client" : "false",
       "logout.confirmation.enabled" : "false",
       "oidc.ciba.grant.enabled" : "false",
       "backchannel.logout.session.required" : "true",
+      "backchannel.logout.url" : "http://nest-api:3000/k_logout",
       "standard.token.exchange.enabled" : "false",
       "frontchannel.logout.session.required" : "true",
       "post.logout.redirect.uris" : "+",
@@ -1566,7 +1567,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "saml-user-attribute-mapper", "oidc-address-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "oidc-usermodel-property-mapper", "saml-role-list-mapper", "saml-user-property-mapper", "oidc-usermodel-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-usermodel-property-mapper", "saml-user-property-mapper", "oidc-full-name-mapper", "saml-user-attribute-mapper", "oidc-address-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-attribute-mapper", "saml-role-list-mapper" ]
       }
     }, {
       "id" : "1fe20113-581d-407c-9e56-35b6b857e59a",
@@ -1616,7 +1617,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "saml-role-list-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "oidc-usermodel-attribute-mapper", "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-property-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-usermodel-attribute-mapper", "oidc-full-name-mapper", "oidc-usermodel-property-mapper", "saml-user-attribute-mapper", "saml-role-list-mapper", "oidc-address-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-property-mapper" ]
       }
     }, {
       "id" : "d55e97dd-655e-4f9a-99e8-37c591332e3e",
