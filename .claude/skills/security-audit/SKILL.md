@@ -23,7 +23,7 @@ Read changed files and map the security-critical areas:
 | Signature verification   | Algorithm confusion, missing kid validation, weak alg |
 | Token validation         | Bypass paths, timing attacks, expiry check gaps       |
 | Role/permission checking | Logic flaws in hasRole, privilege escalation paths    |
-| HTTP calls to Keycloak   | SSRF via realmUrl, credential leakage in logs/errors  |
+| HTTP calls to Keycloak   | SSRF via realmUrl/authServerUrl, credential leakage in logs/errors |
 | Multi-tenant resolution  | Tenant isolation, realm spoofing, cache poisoning     |
 | Guard bypass             | Public decorator misuse, missing guard on code paths  |
 | Config handling          | Secret exposure, unsafe defaults, config injection    |
@@ -50,9 +50,11 @@ Check against these categories relevant to an auth library:
 - **KeycloakToken**: Does it handle tokens with missing claims gracefully (no crash)?
 - **JwksCacheService**: Is rate limiting effective? Can an attacker force excessive JWKS fetches?
 - **TokenValidationService**: Does offline validation check issuer, expiry, AND signature (not just one)?
-- **ProxyService**: Are Keycloak responses validated before use? Can error responses leak info?
+- **KeycloakHttpService**: Are Keycloak responses validated before use? Can error responses leak info?
 - **Guards**: Is the `@Public()` decorator checked correctly? Are there TOCTOU issues between guards?
 - **Multi-tenant**: Can the realm resolver be manipulated to resolve to an attacker-controlled server?
+- **BackchannelLogoutService**: Can revocation entries expire correctly? Is TTL cleanup race-free?
+- **Error hierarchy**: Do error messages leak sensitive details (secrets, full tokens, internal paths)?
 
 ### Step 4 — Remediation Design
 

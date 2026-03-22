@@ -1,7 +1,8 @@
 import * as crypto from 'crypto';
+import { KeycloakTokenError } from '../errors';
 import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
-import { Inject, Injectable, Logger } from '@nestjs/common';
 import { KeycloakHttpService } from './keycloak-http.service';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CachedJwks, JwksKey } from '../interface/jwks.interface';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 
@@ -61,7 +62,7 @@ export class JwksCacheService {
       }
 
       if (!jwk) {
-         throw new Error(`Key '${kid}' not found in JWKS for realm: ${realmUrl}`);
+         throw new KeycloakTokenError(`Key '${kid}' not found in JWKS for realm: ${realmUrl}`);
       }
 
       return crypto.createPublicKey({

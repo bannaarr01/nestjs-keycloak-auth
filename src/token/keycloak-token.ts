@@ -8,10 +8,10 @@ export type { JwtPermission } from '../interface/jwt.interface';
  * Parses a JWT and provides role/permission checking methods.
  */
 export class KeycloakToken {
-   readonly header: JwtHeader;
-   readonly content: JwtContent;
-   readonly signature: Buffer;
-   readonly signed: string;
+   readonly header: JwtHeader = {} as JwtHeader;
+   readonly content: JwtContent = { exp: 0 } as JwtContent;
+   readonly signature: Buffer = Buffer.alloc(0);
+   readonly signed: string = '';
 
    constructor(
     private readonly _token: string,
@@ -29,7 +29,7 @@ export class KeycloakToken {
             this.signature = Buffer.from(parts[2], 'base64');
             this.signed = `${parts[0]}.${parts[1]}`;
          } catch {
-            this.content = { exp: 0 } as JwtContent;
+            // defaults already set above
          }
       }
    }
@@ -71,26 +71,17 @@ export class KeycloakToken {
    * Check if the token has a realm-level role.
    */
    hasRealmRole(roleName: string): boolean {
-      const realmAccess = this.content.realm_access;
-      if (!realmAccess || !realmAccess.roles) {
-         return false;
-      }
-      return realmAccess.roles.indexOf(roleName) >= 0;
+      return this.content.realm_access?.roles?.includes(roleName) ?? false;
    }
 
    /**
    * Check if the token has an application/client-level role.
    */
    hasApplicationRole(clientId: string, roleName: string): boolean {
-      const resourceAccess = this.content.resource_access;
-      if (!resourceAccess) {
-         return false;
-      }
-      const appRoles = resourceAccess[clientId];
-      if (!appRoles) {
-         return false;
-      }
-      return appRoles.roles.indexOf(roleName) >= 0;
+      return (
+         this.content.resource_access?.[clientId]?.roles?.includes(roleName) ??
+      false
+      );
    }
 
    /**
@@ -103,30 +94,20 @@ export class KeycloakToken {
    *   is empty or absent, returns true (permission is granted without scope restriction).
    */
    hasPermission(resource: string, scope?: string): boolean {
-      const permissions = this.content.authorization
-         ? this.content.authorization.permissions
-         : undefined;
+      const match = this.content.authorization?.permissions?.find(
+         (p) => p.rsid === resource || p.rsname === resource,
+      );
 
-      if (!permissions) {
+      if (!match) {
          return false;
       }
 
-      for (let i = 0; i < permissions.length; i++) {
-         const permission = permissions[i];
-
-         if (permission.rsid === resource || permission.rsname === resource) {
-            if (scope) {
-               if (permission.scopes && permission.scopes.length > 0) {
-                  if (!permission.scopes.includes(scope)) {
-                     return false;
-                  }
-               }
-            }
-            return true;
-         }
+      // Scope requested and the permission has an explicit scope list that doesn't include it
+      if (scope && match.scopes?.length > 0 && !match.scopes.includes(scope)) {
+         return false;
       }
 
-      return false;
+      return true;
    }
 
    /**

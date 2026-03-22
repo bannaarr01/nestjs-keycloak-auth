@@ -1,18 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Provider } from '@nestjs/common';
+import { KeycloakConfigError } from './errors';
 import { KeycloakAuthModule } from './keycloak-auth.module';
 import { ResolvedTenantConfig } from './interface/tenant-config.interface';
-import {
-   KEYCLOAK_AUTH_OPTIONS,
-   KEYCLOAK_INSTANCE,
-   TokenValidation,
-} from './constants';
-import {
-   KeycloakAuthConfig,
-   KeycloakAuthOptions,
-   NestKeycloakConfig,
-} from './interface/keycloak-auth-options.interface';
+import { KEYCLOAK_AUTH_OPTIONS, KEYCLOAK_INSTANCE, TokenValidation } from './constants';
+import { KeycloakAuthConfig, KeycloakAuthOptions, NestKeycloakConfig } from './interface/keycloak-auth-options.interface';
 
 /**
  * Resolve environment variable references in config values.
@@ -24,17 +17,17 @@ function resolveValue(value: unknown): unknown {
       return value;
    }
 
-   const regex = /\$\{env\.([^:]*):?(.*)?\}/;
-   if (!regex.test(value)) {
+   const regex = /^\$\{env\.([^:}]*?)(?::([^}]*))?\}$/;
+   const match = value.match(regex);
+   if (!match) {
       return value;
    }
 
-   const tokens = value.replace(regex, '$1--split--$2').split('--split--');
-   const envVar = tokens[0];
+   const envVar = match[1];
+   const fallbackVal = match[2] ?? '';
    const envVal = process.env[envVar];
-   const fallbackVal = tokens[1];
 
-   return envVal || fallbackVal;
+   return envVal ?? fallbackVal;
 }
 
 /**
@@ -84,7 +77,7 @@ export const keycloakProvider: Provider = {
    provide: KEYCLOAK_INSTANCE,
    useFactory: (opts: KeycloakAuthOptions): ResolvedTenantConfig => {
       if (typeof opts === 'string') {
-         throw new Error(
+         throw new KeycloakConfigError(
             'Keycloak configuration should have been parsed by this point.',
          );
       }
@@ -116,7 +109,7 @@ const parseConfig = (
       } else if (fs.existsSync(configPathRoot)) {
          configPath = configPathRoot;
       } else {
-         throw new Error(
+         throw new KeycloakConfigError(
             `Cannot find files, looked in [ ${configPathRelative}, ${configPathRoot} ]`,
          );
       }

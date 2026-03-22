@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
+import { Inject, Injectable } from '@nestjs/common';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 
 /**

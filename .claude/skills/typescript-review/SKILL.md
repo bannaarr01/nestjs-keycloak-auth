@@ -54,11 +54,12 @@ Priority order:
 | Check                                    | Violation signal                        |
 |------------------------------------------|-----------------------------------------|
 | Guard/service/decorator boundaries       | Logic in wrong layer                    |
-| Proxy layer concerns leaking up          | HTTP details exposed to guards          |
 | Missing DI registration                  | Runtime NestJS injection errors         |
 | Breaking public API changes              | Downstream consumers break              |
-| Hardcoded config values                  | Should come from KeycloakConnectConfig  |
-| Direct HTTP calls bypassing ProxyService | Inconsistent error handling             |
+| Hardcoded config values                  | Should come from `KeycloakAuthConfig`   |
+| Direct HTTP calls bypassing `KeycloakHttpService` | Inconsistent error handling    |
+| Plain `Error` thrown instead of typed errors | Should use `errors.ts` hierarchy     |
+| Guards throwing library errors instead of NestJS HTTP exceptions | Wrong layer for HTTP status codes |
 
 ### Step 5 — Output Format
 

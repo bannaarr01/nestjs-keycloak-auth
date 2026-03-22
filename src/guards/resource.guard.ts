@@ -4,10 +4,10 @@ import { META_PUBLIC } from '../decorators/public.decorator';
 import { META_RESOURCE } from '../decorators/resource.decorator';
 import { extractRequest, useTenantConfig } from '../internal.util';
 import { KeycloakHttpService } from '../services/keycloak-http.service';
-import { KeycloakPermission } from '../interface/keycloak-grant.interface';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
-import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
+import { KeycloakPermission } from '../interface/keycloak-grant.interface';
 import { KeycloakEnforcerOptions } from '../interface/enforcer-options.interface';
+import { META_ENFORCER_OPTIONS } from '../decorators/enforcer-options.decorator';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import {
@@ -113,11 +113,10 @@ export class ResourceGuard implements CanActivate {
 
       // Build the required scopes
       let token: KeycloakToken | undefined;
-      if (conditionalScopes != null && conditionalScopes != undefined) {
+      if (conditionalScopes) {
          token = new KeycloakToken(request.accessToken, tenantConfig.clientId);
       }
-      const conditionalScopesResult =
-      conditionalScopes != null || conditionalScopes != undefined
+      const conditionalScopesResult = conditionalScopes
          ? conditionalScopes(request, token)
          : [];
 

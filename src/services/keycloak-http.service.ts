@@ -1,8 +1,9 @@
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
-import { JwksResponse } from '../interface/jwks.interface';
+import { KeycloakPermissionError } from '../errors';
 import { OidcDiscoveryService } from './oidc-discovery.service';
+import { JwksResponse } from '../interface/jwks.interface';
 import {
    KeycloakGrantResponse,
    KeycloakPermission,
@@ -222,7 +223,7 @@ export class KeycloakHttpService {
          if (responseMode === 'decision') {
             return false;
          }
-         throw new Error('Permission check failed');
+         throw new KeycloakPermissionError('Permission check failed');
       }
    }
 }

@@ -1,12 +1,10 @@
 import { Reflector } from '@nestjs/core';
+import { KeycloakConfigError } from '../errors';
 import { KeycloakToken } from '../token/keycloak-token';
 import { extractRequest, useTenantConfig } from '../internal.util';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
+import { META_ROLE_MATCHING_MODE, META_ROLES } from '../decorators/roles.decorator';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
-import {
-   META_ROLE_MATCHING_MODE,
-   META_ROLES,
-} from '../decorators/roles.decorator';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import {
    CanActivate,
@@ -72,7 +70,7 @@ export class RoleGuard implements CanActivate {
             roles.push(...resultRoles);
          }
       } else {
-         throw Error(`Unknown role merge: ${roleMerge}`);
+         throw new KeycloakConfigError(`Unknown role merge: ${roleMerge}`);
       }
 
       if (roles.length === 0) {

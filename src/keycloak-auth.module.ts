@@ -2,25 +2,17 @@ import { HttpModule } from '@nestjs/axios';
 import { JwksCacheService } from './services/jwks-cache.service';
 import { KeycloakHttpService } from './services/keycloak-http.service';
 import { KeycloakGrantService } from './services/keycloak-grant.service';
-import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
 import { OidcDiscoveryService } from './services/oidc-discovery.service';
+import { KeycloakAdminService } from './services/keycloak-admin.service';
+import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
 import { TokenValidationService } from './services/token-validation.service';
+import { KEYCLOAK_AUTH_OPTIONS, KEYCLOAK_MULTITENANT_SERVICE } from './constants';
 import { BackchannelLogoutService } from './services/backchannel-logout.service';
-import {
-   KEYCLOAK_AUTH_OPTIONS,
-   KEYCLOAK_MULTITENANT_SERVICE,
-} from './constants';
 import { KeycloakAdminController } from './controllers/keycloak-admin.controller';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
-import {
-   createKeycloakAuthOptionProvider,
-   keycloakProvider,
-} from './keycloak-auth.providers';
+import { createKeycloakAuthOptionProvider, keycloakProvider } from './keycloak-auth.providers';
+import { KeycloakAuthOptions, NestKeycloakConfig } from './interface/keycloak-auth-options.interface';
 import { KeycloakAuthOptionsFactory } from './interface/keycloak-auth-options-factory.interface';
-import {
-   KeycloakAuthOptions,
-   NestKeycloakConfig,
-} from './interface/keycloak-auth-options.interface';
 import { KeycloakAuthModuleAsyncOptions } from './interface/keycloak-auth-module-async-options.interface';
 
 export * from './constants';
@@ -54,10 +46,12 @@ export * from './services/keycloak-grant.service';
 export * from './services/jwks-cache.service';
 export * from './services/token-validation.service';
 export * from './services/backchannel-logout.service';
+export * from './services/keycloak-admin.service';
 export * from './controllers/keycloak-admin.controller';
 export * from './token/keycloak-token';
 export * from './token/keycloak-grant';
 export * from './types/conditional-scope.type';
+export * from './errors';
 export * from './util';
 
 @Module({})
@@ -88,6 +82,7 @@ export class KeycloakAuthModule {
          JwksCacheService,
          TokenValidationService,
          BackchannelLogoutService,
+         KeycloakAdminService,
       ];
       return {
          module: KeycloakAuthModule,
@@ -129,6 +124,7 @@ export class KeycloakAuthModule {
          JwksCacheService,
          TokenValidationService,
          BackchannelLogoutService,
+         KeycloakAdminService,
       ];
 
       if (options.useExisting || options.useFactory) {

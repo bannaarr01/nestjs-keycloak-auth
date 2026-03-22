@@ -4,9 +4,9 @@ import { META_PUBLIC } from '../decorators/public.decorator';
 import { META_TOKEN_SCOPES } from '../decorators/token-scopes.decorator';
 import { extractRequest, useTenantConfig } from '../internal.util';
 import { KeycloakGrantService } from '../services/keycloak-grant.service';
-import { BackchannelLogoutService } from '../services/backchannel-logout.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { TokenValidationService } from '../services/token-validation.service';
+import { BackchannelLogoutService } from '../services/backchannel-logout.service';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.service';
 import {
@@ -74,7 +74,7 @@ export class AuthGuard implements CanActivate {
          return true;
       }
 
-      this.logger.verbose('Validating jwt', { jwt });
+      this.logger.verbose(`Validating jwt [${jwt.substring(0, 20)}...]`);
 
       const tenantConfig = await useTenantConfig(
          request,
@@ -131,9 +131,9 @@ export class AuthGuard implements CanActivate {
 
       // Valid token should return, this time we warn
       if (isPublic) {
-         this.logger.warn('A jwt token was retrieved but failed validation.', {
-            jwt,
-         });
+         this.logger.warn('A jwt token was retrieved but failed validation.');
+         request.user = undefined;
+         request.accessToken = undefined;
          return true;
       }
 

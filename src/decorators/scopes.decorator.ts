@@ -1,10 +1,6 @@
 import { extractRequest } from '../internal.util';
 import { ConditionalScopeFn } from '../types/conditional-scope.type';
-import {
-   createParamDecorator,
-   ExecutionContext,
-   SetMetadata,
-} from '@nestjs/common';
+import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
 
 export { ConditionalScopeFn };
 
@@ -20,7 +16,7 @@ export const Scopes = (...scopes: string[]) => SetMetadata(META_SCOPES, scopes);
 
 /**
  * Keycloak authorization conditional scopes.
- * @param scopes - scopes that are associated with the resource depending on the conditions
+ * @param resolver
  */
 export const ConditionalScopes = (resolver: ConditionalScopeFn) =>
    SetMetadata(META_CONDITIONAL_SCOPES, resolver);

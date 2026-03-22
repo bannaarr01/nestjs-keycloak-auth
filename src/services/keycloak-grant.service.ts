@@ -1,3 +1,4 @@
+import { KeycloakTokenError } from '../errors';
 import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
 import { KeycloakGrant } from '../token/keycloak-grant';
 import { KeycloakToken } from '../token/keycloak-token';
@@ -73,7 +74,7 @@ export class KeycloakGrantService {
             'Bearer',
          );
          if (!isValid) {
-            throw new Error(
+            throw new KeycloakTokenError(
                'Grant validation failed. Reason: invalid access_token',
             );
          }

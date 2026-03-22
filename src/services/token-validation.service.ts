@@ -1,9 +1,9 @@
 import * as crypto from 'crypto';
+import { JwksCacheService } from './jwks-cache.service';
 import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
 import { KeycloakToken } from '../token/keycloak-token';
-import { JwksCacheService } from './jwks-cache.service';
-import { Inject, Injectable, Logger } from '@nestjs/common';
 import { KeycloakHttpService } from './keycloak-http.service';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 
 @Injectable()
@@ -78,6 +78,12 @@ export class TokenValidationService {
       }
    }
 
+   private static readonly ALLOWED_ALGS = new Set([
+      'RS256', 'RS384', 'RS512',
+      'ES256', 'ES384', 'ES512',
+      'PS256', 'PS384', 'PS512',
+   ]);
+
    /**
    * Validate a token offline by verifying signature via JWKS and checking
    * expiry, type, notBefore, issuer, audience, azp, and signature.
@@ -147,13 +153,16 @@ export class TokenValidationService {
             return false;
          }
 
-         // Verify signature
-         const verify = crypto.createVerify('RSA-SHA256');
+         // Verify algorithm is on the allowlist (prevent algorithm confusion attacks)
+         const alg = token.header.alg || 'RS256';
+         if (!TokenValidationService.ALLOWED_ALGS.has(alg)) {
+            this.logger.verbose(`invalid token (unsupported alg): ${alg}`);
+            return false;
+         }
 
          if (this.publicKey) {
             // Use static public key if configured
-            verify.update(token.signed);
-            if (!verify.verify(this.publicKey, token.signature)) {
+            if (!this.verifySignature(token.signed, token.signature, this.publicKey, alg)) {
                this.logger.verbose('invalid token (signature)');
                return false;
             }
@@ -168,12 +177,8 @@ export class TokenValidationService {
          }
 
          const key = await this.jwksCache.getKey(realmUrl, kid);
-         const alg = token.header.alg || 'RS256';
-         const nodeAlg = this.mapAlgorithm(alg);
 
-         const jwksVerifier = crypto.createVerify(nodeAlg);
-         jwksVerifier.update(token.signed);
-         if (!jwksVerifier.verify(key, token.signature)) {
+         if (!this.verifySignature(token.signed, token.signature, key, alg)) {
             this.logger.verbose('invalid token (public key signature)');
             return false;
          }
@@ -185,18 +190,30 @@ export class TokenValidationService {
       }
    }
 
-   private mapAlgorithm(jwtAlg: string): string {
-      const algMap: Record<string, string> = {
-         RS256: 'RSA-SHA256',
-         RS384: 'RSA-SHA384',
-         RS512: 'RSA-SHA512',
-         ES256: 'SHA256',
-         ES384: 'SHA384',
-         ES512: 'SHA512',
-         PS256: 'RSA-SHA256',
-         PS384: 'RSA-SHA384',
-         PS512: 'RSA-SHA512',
+   private verifySignature(
+      signed: string,
+      signature: Buffer,
+      key: crypto.KeyObject | string,
+      jwtAlg: string,
+   ): boolean {
+      const hashMap: Record<string, string> = {
+         RS256: 'SHA256', RS384: 'SHA384', RS512: 'SHA512',
+         ES256: 'SHA256', ES384: 'SHA384', ES512: 'SHA512',
+         PS256: 'SHA256', PS384: 'SHA384', PS512: 'SHA512',
       };
-      return algMap[jwtAlg] || 'RSA-SHA256';
+      const hash = hashMap[jwtAlg] || 'SHA256';
+      const keyObj = typeof key === 'string' ? crypto.createPublicKey(key) : key;
+
+      if (jwtAlg.startsWith('PS')) {
+         return crypto.verify(
+            hash,
+            Buffer.from(signed),
+            { key: keyObj, padding: crypto.constants.RSA_PKCS1_PSS_PADDING },
+            signature,
+         );
+      }
+
+      // crypto.verify() auto-detects key type (RSA vs EC) from the KeyObject
+      return crypto.verify(hash, Buffer.from(signed), keyObj, signature);
    }
 }

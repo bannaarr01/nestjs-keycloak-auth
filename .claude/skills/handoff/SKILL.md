@@ -64,11 +64,10 @@ Report the current state of all quality gates:
 
 | Check | Status | Notes |
 |---|---|---|
-| `npm run typecheck` | Pass / Fail / Not run | Details |
-| `npm run lint:check` | Pass / Fail / Not run | Details |
-| `npm run test` | Pass / Fail / Not run | X passed, Y failed |
-| `npm run test:e2e` | Pass / Fail / Not run | Details |
-| Policy scripts | Pass / Fail / Not run | Which ones |
+| `npm run build` | Pass / Fail / Not run | TypeScript compilation |
+| `npm run lint` | Pass / Fail / Not run | ESLint + Prettier |
+| `npm test` | Pass / Fail / Not run | X passed, Y failed |
+| `npm run test:cov` | Pass / Fail / Not run | Coverage details |
 ```
 
 ### Step 5 — Write the Handoff Document

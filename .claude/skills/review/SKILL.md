@@ -25,14 +25,14 @@ Check every changed file against the library's patterns:
 
 | Area | What to check |
 |---|---|
-| **Guards** | Inject via `@Inject(KEYCLOAK_INSTANCE)` etc., use `ResolvedTenantConfig` (not Keycloak instances), use `useTenantConfig()` for tenant resolution, `await extractRequestAndAttachCookie()` |
-| **Services** | `@Injectable()`, proper NestJS Logger usage, error handling with try/catch |
+| **Guards** | Inject via `@Inject(KEYCLOAK_INSTANCE)` etc., use `ResolvedTenantConfig` (not Keycloak instances), use `useTenantConfig()` for tenant resolution, `extractRequest()` for request extraction |
+| **Services** | `@Injectable()`, proper NestJS Logger usage, throw typed errors from `errors.ts` (not plain `Error`) |
 | **Decorators** | Use `SetMetadata` from `@nestjs/common`, use local types (not `keycloak-connect` types) |
-| **Proxy** | `HttpException` for errors (not custom errors), no env var checks, no private IP blocking |
+| **Errors** | All `throw` sites use the typed hierarchy from `errors.ts` (`KeycloakConfigError`, `KeycloakTokenError`, `KeycloakPermissionError`, `KeycloakAdminError`). Guards still throw NestJS `UnauthorizedException`/`ForbiddenException`. |
 | **Token** | `hasRole()` matches three-form logic (`"role"`, `"realm:role"`, `"client:role"`) |
 | **Interfaces** | Backward-compatible config fields, proper JSDoc |
-| **Module** | `ProxyModule` imported, new services registered as providers and exports |
-| **Exports** | New public types exported via `keycloak-connect.module.ts` and `index.ts` |
+| **Module** | New services registered as providers and exports in `keycloak-auth.module.ts` |
+| **Exports** | New public types exported via `keycloak-auth.module.ts` and `src/index.ts` |
 
 ### Step 3 — Quality Checks
 
@@ -46,6 +46,7 @@ npm run lint
 
 Verify:
 - No `keycloak-connect` npm package imports remain in `src/`
+- No plain `throw new Error(` in `src/` — all errors should use the typed hierarchy from `errors.ts`
 - No unused imports (enforced by `eslint-plugin-unused-imports`)
 - 3-space indentation, single quotes
 

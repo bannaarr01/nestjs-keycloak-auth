@@ -31,6 +31,7 @@ UMA-based resource authorization. Endpoints are resolved via OIDC discovery
 src/
   keycloak-auth.module.ts      # Dynamic module registration
   keycloak-auth.providers.ts   # Config parsing + ResolvedTenantConfig providers
+  errors.ts                       # Typed error hierarchy (KeycloakAuthError base + subclasses)
   internal.util.ts                # Request extraction + tenant resolution helpers
   constants.ts                    # Injection tokens + enums
   util.ts                         # JWT payload parsing utility
@@ -51,13 +52,15 @@ src/
     keycloak-multitenant.service.ts # Tenant config resolution + cache
     jwks-cache.service.ts         # JWKS retrieval/cache and key lookup
     keycloak-url.service.ts       # URL helper exports
+    keycloak-admin.service.ts     # Admin callback business logic (notBefore, back-channel logout)
+    backchannel-logout.service.ts # In-memory session/user revocation store with TTL cleanup
 
   guards/
     auth.guard.ts                 # Authentication guard
     resource.guard.ts             # UMA resource/scope enforcement
     role.guard.ts                 # Role enforcement
 
-  decorators/                     # @Public, @Roles, @Resource, @Scopes, etc.
+  decorators/                     # @Public, @Roles, @Resource, @Scopes, @TokenScopes, etc.
   interface/                      # Config, tenant, JWKS, grant, enforcer option types
 ```
 
@@ -69,6 +72,7 @@ src/
 - `TokenValidationService` stores `notBefore` per realm URL to avoid cross-realm revocation leakage.
 - `ResourceGuard` sends default claims (`http.uri`, `user.agent`) when no custom `@EnforcerOptions()` claims are set.
 - `AuthGuard` ONLINE path performs `createGrant()` pre-check before introspection for adapter parity.
+- Typed error hierarchy in `errors.ts`: all library errors extend `KeycloakAuthError` with a machine-readable `code` property. Subclasses: `KeycloakConfigError`, `KeycloakTokenError`, `KeycloakPermissionError`, `KeycloakAdminError`. Guards still throw NestJS `UnauthorizedException`/`ForbiddenException` at the HTTP boundary.
 
 ## Workflow
 
@@ -132,8 +136,11 @@ npm run release
 
 - Module entry: `src/keycloak-auth.module.ts`
 - Public API: `src/index.ts`
+- Error hierarchy: `src/errors.ts`
 - Auth guard: `src/guards/auth.guard.ts`
 - Resource guard: `src/guards/resource.guard.ts`
 - Admin callback controller: `src/controllers/keycloak-admin.controller.ts`
+- Admin callback logic: `src/services/keycloak-admin.service.ts`
 - Token validation: `src/services/token-validation.service.ts`
+- Backchannel logout: `src/services/backchannel-logout.service.ts`
 - Package config: `package.json`
