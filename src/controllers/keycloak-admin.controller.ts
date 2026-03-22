@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import { KeycloakToken } from '../token/keycloak-token';
 import { JwksCacheService } from '../services/jwks-cache.service';
+import { BackchannelLogoutService } from '../services/backchannel-logout.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { ServerRequest, ServerResponse } from '../interface/server.interface';
 import { TokenValidationService } from '../services/token-validation.service';
@@ -45,6 +46,7 @@ export class KeycloakAdminController {
     private readonly multiTenant: KeycloakMultiTenantService,
     private readonly tokenValidation: TokenValidationService,
     private readonly jwksCache: JwksCacheService,
+    private readonly backchannelLogoutService: BackchannelLogoutService,
    ) {}
 
   @Post('k_push_not_before')
@@ -91,6 +93,88 @@ export class KeycloakAdminController {
          response.status(status).end(err instanceof Error ? err.message : 'error');
       }
    }
+
+  @Post('k_logout')
+  @HttpCode(200)
+  async handleBackchannelLogout(
+    @Body() body: unknown,
+    @Req() request: ServerRequest,
+    @Res() response: ServerResponse,
+  ) {
+     try {
+        const logoutTokenRaw = this.extractLogoutToken(body);
+        if (!logoutTokenRaw) {
+           response.status(400).end('invalid logout token');
+           return;
+        }
+
+        const token = new KeycloakToken(logoutTokenRaw);
+        if (!token.signed) {
+           response.status(400).end('invalid logout token');
+           return;
+        }
+
+        const tenantConfig = await this.resolveTenantConfig(request, token);
+        await this.verifyAdminSignature(token, tenantConfig.realmUrl);
+
+        // Validate typ is "logout+jwt" or "JWT" (per OIDC Back-Channel Logout spec)
+        const typ = token.header?.typ;
+        if (typ !== 'logout+jwt' && typ !== 'JWT') {
+           response.status(400).end('invalid logout token type');
+           return;
+        }
+
+        // Validate events claim contains back-channel logout event
+        const events = token.content?.events;
+        if (
+           !events ||
+          typeof events !== 'object' ||
+          !('http://schemas.openid.net/event/backchannel-logout' in events)
+        ) {
+           response.status(400).end('missing backchannel-logout event');
+           return;
+        }
+
+        const sid =
+          typeof token.content.sid === 'string'
+             ? token.content.sid
+             : undefined;
+        const sub =
+          typeof token.content.sub === 'string'
+             ? token.content.sub
+             : undefined;
+
+        if (!sid && !sub) {
+           response.status(400).end('logout token must contain sid or sub');
+           return;
+        }
+
+        this.backchannelLogoutService.revoke(sid, sub);
+        this.logger.log(
+           `Back-channel logout processed: sid=${sid || 'n/a'}, sub=${sub || 'n/a'}`,
+        );
+        response.send('ok');
+     } catch (err) {
+        this.logger.warn(`Back-channel logout failed: ${err}`);
+        const status = err instanceof AdminAuthError ? 401 : 400;
+        response
+           .status(status)
+           .end(err instanceof Error ? err.message : 'error');
+     }
+  }
+
+  private extractLogoutToken(body: unknown): string | null {
+     if (body && typeof body === 'object') {
+        const map = body as Record<string, unknown>;
+        if (
+           typeof map.logout_token === 'string' &&
+          map.logout_token.trim() !== ''
+        ) {
+           return map.logout_token.trim();
+        }
+     }
+     return null;
+  }
 
   private extractAdminPayload(
      body: unknown,

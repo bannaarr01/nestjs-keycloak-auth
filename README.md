@@ -25,7 +25,9 @@ A bearer-only Keycloak authentication and authorization module for [NestJS](http
 
 - This package is designed for bearer-only API/server flows.
 - It does **not** implement browser/session middleware flows such as login redirects, auth-code callback exchange, session/cookie grant stores, or logout endpoints.
-- It does implement `POST /k_push_not_before` to receive Keycloak admin revocation updates (used by OFFLINE token validation).
+- It implements Keycloak admin callback endpoints:
+  - `POST /k_push_not_before` for realm `notBefore` revocation updates (used by OFFLINE token validation).
+  - `POST /k_logout` for OIDC back-channel logout token handling (`sid`/`sub` revocation).
 
 ## Installation
 
@@ -275,15 +277,17 @@ Setting up for multi-tenant is configured as an option in your configuration:
 
 ## Admin callback endpoint
 
-This module mounts a Keycloak admin callback endpoint:
+This module mounts Keycloak admin callback endpoints:
 
 - `POST /k_push_not_before`
+- `POST /k_logout`
 
 Purpose:
 
 - Accepts signed Keycloak admin callbacks with action `PUSH_NOT_BEFORE`.
 - Updates token revocation cutoff (`notBefore`) used by OFFLINE validation.
 - Stores `notBefore` per realm URL, so one realm update does not affect another realm in multi-tenant setups.
+- Accepts signed OIDC back-channel logout tokens and revokes token usage by `sid` and/or `sub`.
 
 Realm resolution for callback verification:
 
@@ -291,7 +295,16 @@ Realm resolution for callback verification:
 2. single-tenant configured realm (`realm`)
 3. fallback to callback token issuer (`iss`) realm
 
-`k_logout` is intentionally not implemented because there is no session/cookie grant storage layer to invalidate.
+`k_logout` here is callback-only revocation handling for bearer tokens. It does not add browser/session middleware flows.
+
+## Testing
+
+```bash
+npm test
+npm run test:cov
+```
+
+Current test setup uses Jest + ts-jest and is configured to enforce 100% global coverage thresholds.
 
 ## Configuration options
 

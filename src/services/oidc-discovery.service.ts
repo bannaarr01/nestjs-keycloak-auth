@@ -57,6 +57,9 @@ export class OidcDiscoveryService {
          userinfo_endpoint:
         (data.userinfo_endpoint as string) ||
         `${realmUrl}/protocol/openid-connect/userinfo`,
+         end_session_endpoint:
+        (data.end_session_endpoint as string) ||
+        `${realmUrl}/protocol/openid-connect/logout`,
       };
 
       this.cache.set(realmUrl, { endpoints, fetchedAt: Date.now() });

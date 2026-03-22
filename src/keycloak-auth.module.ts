@@ -5,6 +5,7 @@ import { KeycloakGrantService } from './services/keycloak-grant.service';
 import { DynamicModule, Logger, Module, Provider } from '@nestjs/common';
 import { OidcDiscoveryService } from './services/oidc-discovery.service';
 import { TokenValidationService } from './services/token-validation.service';
+import { BackchannelLogoutService } from './services/backchannel-logout.service';
 import {
    KEYCLOAK_AUTH_OPTIONS,
    KEYCLOAK_MULTITENANT_SERVICE,
@@ -30,6 +31,7 @@ export * from './decorators/public.decorator';
 export * from './decorators/resource.decorator';
 export * from './decorators/roles.decorator';
 export * from './decorators/scopes.decorator';
+export * from './decorators/token-scopes.decorator';
 export * from './guards/auth.guard';
 export * from './guards/resource.guard';
 export * from './guards/role.guard';
@@ -51,6 +53,7 @@ export * from './services/keycloak-url.service';
 export * from './services/keycloak-grant.service';
 export * from './services/jwks-cache.service';
 export * from './services/token-validation.service';
+export * from './services/backchannel-logout.service';
 export * from './controllers/keycloak-admin.controller';
 export * from './token/keycloak-token';
 export * from './token/keycloak-grant';
@@ -84,6 +87,7 @@ export class KeycloakAuthModule {
          KeycloakGrantService,
          JwksCacheService,
          TokenValidationService,
+         BackchannelLogoutService,
       ];
       return {
          module: KeycloakAuthModule,
@@ -124,6 +128,7 @@ export class KeycloakAuthModule {
          KeycloakGrantService,
          JwksCacheService,
          TokenValidationService,
+         BackchannelLogoutService,
       ];
 
       if (options.useExisting || options.useFactory) {

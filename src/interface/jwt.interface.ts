@@ -23,6 +23,12 @@ export interface JwtContent {
   realm_access?: { roles: string[] };
   resource_access?: Record<string, { roles: string[] }>;
   authorization?: { permissions: JwtPermission[] };
+  // OAuth2 scope claim (space-delimited string, e.g. "openid profile email")
+  scope?: string;
+  // OIDC session ID
+  sid?: string;
+  // OIDC back-channel logout events claim
+  events?: Record<string, unknown>;
   // Admin callback fields
   action?: string;
   adapterSessionIds?: string[];

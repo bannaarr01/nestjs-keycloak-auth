@@ -13,8 +13,8 @@ UMA-based resource authorization. Endpoints are resolved via OIDC discovery
 - OIDC discovery for endpoint resolution (token, introspection, JWKS, userinfo).
 - ONLINE (introspection) and OFFLINE (JWKS signature) token validation.
 - Multi-tenant realm resolution and per-realm revocation (`notBefore`) state.
-- Admin callback support for `POST /k_push_not_before`.
-- No browser/session middleware flows (login redirects, session/cookie stores, logout endpoints).
+- Admin callback support for `POST /k_push_not_before` and `POST /k_logout` (back-channel logout token processing).
+- No browser/session middleware flows (login redirects, auth-code callback exchanges, session/cookie stores).
 
 ## Core Stack
 
@@ -37,7 +37,7 @@ src/
   index.ts                        # Package public entry
 
   controllers/
-    keycloak-admin.controller.ts  # POST /k_push_not_before admin callback
+    keycloak-admin.controller.ts  # POST /k_push_not_before + POST /k_logout callbacks
 
   token/
     keycloak-token.ts             # Token parser/helpers (roles, permissions, expiry)
@@ -76,6 +76,7 @@ src/
 
 - Run `npm run build` after code changes.
 - Run `npm run lint` before handoff.
+- Run `npm run test:cov` for full regression + coverage verification.
 - Ensure no accidental `keycloak-connect` runtime import is introduced in `src/`.
 - Verify all Keycloak HTTP calls use `OidcDiscoveryService` rather than hardcoded endpoint paths.
 
@@ -120,6 +121,8 @@ Use an existing skill when directly relevant.
 ```bash
 npm run build
 npm run lint
+npm test
+npm run test:cov
 npm run format
 npm run clean
 npm run release

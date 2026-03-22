@@ -6,6 +6,7 @@ export interface OidcEndpoints {
   token_endpoint: string;
   introspection_endpoint: string;
   userinfo_endpoint: string;
+  end_session_endpoint: string;
 }
 
 export interface CachedDiscovery {

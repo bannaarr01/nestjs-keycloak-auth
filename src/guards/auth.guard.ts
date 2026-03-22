@@ -1,8 +1,10 @@
 import { parseToken } from '../util';
 import { Reflector } from '@nestjs/core';
 import { META_PUBLIC } from '../decorators/public.decorator';
+import { META_TOKEN_SCOPES } from '../decorators/token-scopes.decorator';
 import { extractRequest, useTenantConfig } from '../internal.util';
 import { KeycloakGrantService } from '../services/keycloak-grant.service';
+import { BackchannelLogoutService } from '../services/backchannel-logout.service';
 import { ResolvedTenantConfig } from '../interface/tenant-config.interface';
 import { TokenValidationService } from '../services/token-validation.service';
 import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
@@ -10,6 +12,7 @@ import { KeycloakMultiTenantService } from '../services/keycloak-multitenant.ser
 import {
    CanActivate,
    ExecutionContext,
+   ForbiddenException,
    Inject,
    Injectable,
    Logger,
@@ -40,6 +43,7 @@ export class AuthGuard implements CanActivate {
     private multiTenant: KeycloakMultiTenantService,
     private tokenValidation: TokenValidationService,
     private keycloakGrant: KeycloakGrantService,
+    private backchannelLogout: BackchannelLogoutService,
    ) {}
 
    async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -86,6 +90,40 @@ export class AuthGuard implements CanActivate {
          request.user = parseToken(jwt);
          // Attach raw access token JWT extracted from bearer
          request.accessToken = jwt;
+
+         // Check back-channel logout revocation
+         const sid = request.user?.sid as string | undefined;
+         const sub = request.user?.sub as string | undefined;
+         if (this.backchannelLogout.isRevoked(sid, sub)) {
+            this.logger.verbose('Session or user has been revoked via back-channel logout');
+            if (isPublic) {
+               request.user = undefined;
+               request.accessToken = undefined;
+               return true;
+            }
+            throw new UnauthorizedException();
+         }
+
+         // Check @TokenScopes() decorator requirements
+         const requiredScopes = this.reflector.getAllAndOverride<string[]>(
+            META_TOKEN_SCOPES,
+            [context.getClass(), context.getHandler()],
+         );
+         if (requiredScopes && requiredScopes.length > 0) {
+            const scopeClaim = request.user?.scope;
+            const grantedScopes = new Set(
+               typeof scopeClaim === 'string' ? scopeClaim.split(' ') : [],
+            );
+            const missing = requiredScopes.filter((s) => !grantedScopes.has(s));
+            if (missing.length > 0) {
+               this.logger.verbose(
+                  `Token missing required scopes: ${missing.join(', ')}`,
+               );
+               throw new ForbiddenException(
+                  `Missing required token scopes: ${missing.join(', ')}`,
+               );
+            }
+         }
 
          this.logger.verbose('User authenticated', { user: request.user });
          return true;
