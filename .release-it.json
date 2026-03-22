@@ -1,8 +1,7 @@
 {
   "git": {
     "commitMessage": "${version}",
-    "commitArgs": ["-S"],
-    "tagArgs": ["-s"]
+    "commitArgs": ["--no-verify"]
   },
   "hooks": {
     "before:init": ["npm run lint", "npm run test:cov"],
