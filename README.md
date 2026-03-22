@@ -4,6 +4,7 @@
 
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/bannaarr01/nestjs-keycloak-auth?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/bannaarr01/nestjs-keycloak-auth?style=for-the-badge)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/bannaarr01/nestjs-keycloak-auth/badge)](https://scorecard.dev/viewer/?uri=github.com/bannaarr01/nestjs-keycloak-auth)
 
 A bearer-only Keycloak authentication and authorization module for [NestJS](https://nestjs.com/). Uses standard OIDC discovery and has zero runtime dependency on `keycloak-connect`.
 
