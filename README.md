@@ -151,10 +151,6 @@ Adds an authentication guard, you can also have it scoped if you like (using reg
 
 Adds a resource guard, which is permissive by default (can be configured see [options](#nest-keycloak-options)). Only controllers annotated with `@Resource` and methods with `@Scopes` are handled by this guard.
 
-When `@EnforcerOptions()` is not provided, default claims are sent for authorization requests:
-- `http.uri`
-- `user.agent`
-
 **_NOTE: This guard is not necessary if you are using role-based authorization exclusively. You can use role guard exclusively for that._**
 
 ### RoleGuard
@@ -322,6 +318,17 @@ import {
 
 Guards continue to throw standard NestJS `UnauthorizedException` / `ForbiddenException` at the HTTP boundary.
 
+## Example project
+
+The [`example/`](example/) folder contains a complete working NestJS application with:
+
+- Docker Compose setup (Keycloak + PostgreSQL + NestJS API)
+- Pre-configured Keycloak realm exports (single tenant + two tenants)
+- Postman collection for testing all endpoints
+- Product CRUD controller demonstrating `@Resource`, `@Scopes`, `@ConditionalScopes`, `@Roles`, `@EnforcerOptions`, and UMA response modes
+
+See [example/README.md](example/README.md) for setup and usage instructions.
+
 ## Testing
 
 ```bash
@@ -365,6 +372,14 @@ Current test setup uses Jest + ts-jest and is configured to enforce 100% global 
 | realmSecretResolver        | Resolves secret by realm (and optional request)                                                           | no       | -       |
 | realmAuthServerUrlResolver | Resolves auth server URL by realm (and optional request)                                                  | no       | -       |
 | realmClientIdResolver      | Resolves client ID by realm (and optional request)                                                        | yes      | -       |
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+
+## Security
+
+To report a vulnerability, see [SECURITY.md](SECURITY.md). Do not open a public issue.
 
 ## Acknowledgements
 

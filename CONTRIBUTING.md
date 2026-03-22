@@ -55,7 +55,7 @@ a project may be further defined and clarified by project maintainers.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at [INSERT EMAIL ADDRESS]. All
+reported by contacting the project team at **tbannaarr@gmail.com**. All
 complaints will be reviewed and investigated and will result in a response that
 is deemed necessary and appropriate to the circumstances. The project team is
 obligated to maintain confidentiality with regard to the reporter of an incident.
@@ -74,3 +74,73 @@ available at https://www.contributor-covenant.org/version/1/4/code-of-conduct.ht
 
 For answers to common questions about this code of conduct, see
 https://www.contributor-covenant.org/faq
+
+---
+
+# Contributing
+
+Thank you for your interest in contributing to nestjs-keycloak-auth! This guide will help you get started.
+
+## Getting started
+
+1. Fork the repository
+2. Clone your fork:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/nestjs-keycloak-auth.git
+   cd nestjs-keycloak-auth
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Create a branch for your change:
+   ```bash
+   git checkout -b feature/my-change
+   ```
+
+## Development workflow
+
+### Build
+
+```bash
+npm run build
+```
+
+### Run tests
+
+```bash
+npm test              # run tests
+npm run test:cov      # run tests with coverage (must be 100%)
+```
+
+### Lint
+
+```bash
+npm run lint          # check for issues
+npm run lint:fix      # auto-fix issues
+```
+
+### Example project
+
+The `example/` folder contains a full NestJS application with Docker Compose (Keycloak + PostgreSQL) for manual testing. See [example/README.md](example/README.md) for setup instructions.
+
+## Pull request guidelines
+
+- Keep PRs focused on a single change
+- All tests must pass with high coverage
+- Follow the existing code style (enforced by ESLint)
+- Add tests for new features or bug fixes
+- Update documentation if your change affects the public API
+- Use the [PR template](.github/PULL_REQUEST_TEMPLATE.md)
+
+## Reporting bugs
+
+Use the [bug report template](https://github.com/bannaarr01/nestjs-keycloak-auth/issues/new?template=bug_report.md). Include your environment details and redact any secrets or tokens in logs.
+
+## Reporting security vulnerabilities
+
+**Do not open a public issue.** See [SECURITY.md](SECURITY.md) for responsible disclosure instructions.
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
