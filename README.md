@@ -2,8 +2,11 @@
 
 # NestJS Keycloak Auth
 
-![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/bannaarr01/nestjs-keycloak-auth?style=for-the-badge)
-![GitHub License](https://img.shields.io/github/license/bannaarr01/nestjs-keycloak-auth?style=for-the-badge)
+[![npm version](https://img.shields.io/npm/v/nestjs-keycloak-auth?style=for-the-badge)](https://www.npmjs.com/package/nestjs-keycloak-auth)
+[![npm downloads](https://img.shields.io/npm/dw/nestjs-keycloak-auth?style=for-the-badge)](https://www.npmjs.com/package/nestjs-keycloak-auth)
+[![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/bannaarr01/nestjs-keycloak-auth?style=for-the-badge)](https://github.com/bannaarr01/nestjs-keycloak-auth/issues)
+[![GitHub License](https://img.shields.io/github/license/bannaarr01/nestjs-keycloak-auth?style=for-the-badge)](https://github.com/bannaarr01/nestjs-keycloak-auth/blob/main/LICENSE)
+[![codecov](https://codecov.io/gh/bannaarr01/nestjs-keycloak-auth/graph/badge.svg)](https://codecov.io/gh/bannaarr01/nestjs-keycloak-auth)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/bannaarr01/nestjs-keycloak-auth/badge)](https://scorecard.dev/viewer/?uri=github.com/bannaarr01/nestjs-keycloak-auth)
 
 A bearer-only Keycloak authentication and authorization module for [NestJS](https://nestjs.com/). Uses standard OIDC discovery and has zero runtime dependency on `keycloak-connect`.
