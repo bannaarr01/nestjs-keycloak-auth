@@ -52,6 +52,70 @@ describe('metadata decorators', () => {
       ).toBe(RoleMatch.ALL);
    });
 
+   it('sets roles metadata from a single string', () => {
+      class ControllerClass {
+         method(): void {}
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(
+         ControllerClass.prototype,
+         'method',
+      ) as PropertyDescriptor;
+      Roles('admin')(ControllerClass.prototype, 'method', descriptor);
+
+      expect(
+         Reflect.getMetadata(META_ROLES, ControllerClass.prototype.method),
+      ).toEqual(['admin']);
+   });
+
+   it('sets roles metadata from an array of strings', () => {
+      class ControllerClass {
+         method(): void {}
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(
+         ControllerClass.prototype,
+         'method',
+      ) as PropertyDescriptor;
+      Roles(['admin', 'basic'])(ControllerClass.prototype, 'method', descriptor);
+
+      expect(
+         Reflect.getMetadata(META_ROLES, ControllerClass.prototype.method),
+      ).toEqual(['admin', 'basic']);
+   });
+
+   it('sets roles metadata from an object with roles array', () => {
+      class ControllerClass {
+         method(): void {}
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(
+         ControllerClass.prototype,
+         'method',
+      ) as PropertyDescriptor;
+      Roles({ roles: ['realm:admin', 'realm:basic'] })(
+         ControllerClass.prototype,
+         'method',
+         descriptor,
+      );
+
+      expect(
+         Reflect.getMetadata(META_ROLES, ControllerClass.prototype.method),
+      ).toEqual(['realm:admin', 'realm:basic']);
+   });
+
+   it('sets empty roles metadata when called with no arguments', () => {
+      class ControllerClass {
+         method(): void {}
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(
+         ControllerClass.prototype,
+         'method',
+      ) as PropertyDescriptor;
+      Roles()(ControllerClass.prototype, 'method', descriptor);
+
+      expect(
+         Reflect.getMetadata(META_ROLES, ControllerClass.prototype.method),
+      ).toEqual([]);
+   });
+
    it('sets scopes and conditional scopes metadata', () => {
       class ControllerClass {
          method(): void {}

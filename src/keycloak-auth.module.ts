@@ -11,8 +11,8 @@ import { BackchannelLogoutService } from './services/backchannel-logout.service'
 import { KeycloakAdminController } from './controllers/keycloak-admin.controller';
 import { KeycloakMultiTenantService } from './services/keycloak-multitenant.service';
 import { createKeycloakAuthOptionProvider, keycloakProvider } from './keycloak-auth.providers';
-import { KeycloakAuthOptions, NestKeycloakConfig } from './interface/keycloak-auth-options.interface';
 import { KeycloakAuthOptionsFactory } from './interface/keycloak-auth-options-factory.interface';
+import { KeycloakAuthOptions, NestKeycloakConfig } from './interface/keycloak-auth-options.interface';
 import { KeycloakAuthModuleAsyncOptions } from './interface/keycloak-auth-module-async-options.interface';
 
 export * from './constants';
@@ -51,6 +51,8 @@ export * from './controllers/keycloak-admin.controller';
 export * from './token/keycloak-token';
 export * from './token/keycloak-grant';
 export * from './types/conditional-scope.type';
+export * from './types/roles-decorator-input.type';
+export * from './interface/roles-decorator-options.interface';
 export * from './errors';
 export * from './util';
 
