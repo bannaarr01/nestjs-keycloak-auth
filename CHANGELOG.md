@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.0.0...v1.0.1) (2026-03-25)
+
+
+### Features
+
+* support array and object input formats for @Roles decorator ([e2c365d](https://github.com/bannaarr01/nestjs-keycloak-auth/commit/e2c365d003388f9e6d2f045c844d9810b1a2783a))
+
 # 1.0.0 (2026-03-22)
 
 

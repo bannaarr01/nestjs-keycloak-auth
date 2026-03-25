@@ -1,6 +1,6 @@
 {
   "name": "nestjs-keycloak-auth",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Keycloak authentication and authorization module for NestJS",
   "author": "B. Joshua Adedigba",
   "contributors": [
