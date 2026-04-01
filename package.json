@@ -125,6 +125,7 @@
   "overrides": {
     "release-it": {
       "undici": "^7.0.0"
-    }
+    },
+    "path-to-regexp": "^8.4.0"
   }
 }
