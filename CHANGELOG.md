@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.0.3...v1.0.4) (2026-04-04)
+
+
+### Bug Fixes
+
+* cap axios below 1.14.0 to mitigate supply chain compromise ([4da5ee6](https://github.com/bannaarr01/nestjs-keycloak-auth/commit/4da5ee69f42f85e0358893643479e0a959f37b18))
+
 ## [1.0.3](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.0.2...v1.0.3) (2026-04-01)
 
 ## [1.0.2](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.0.1...v1.0.2) (2026-04-01)
