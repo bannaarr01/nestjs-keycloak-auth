@@ -7,7 +7,7 @@ import {
    RoleMatch,
    TokenScopes,
    AccessToken,
-   KeycloakUser,
+   AuthenticatedUser,
    RoleMatchingMode,
 } from 'nestjs-keycloak-auth';
 
@@ -17,14 +17,14 @@ export class AppController {
 
   @Get()
   @Public()
-  getHello(@KeycloakUser() user: ExampleUser | undefined) {
+  getHello(@AuthenticatedUser() user: ExampleUser | undefined) {
     return this.appService.getHello(user);
   }
 
   @Get('private')
   @TokenScopes('openid')
   getPrivate(
-    @KeycloakUser() user: ExampleUser | undefined,
+    @AuthenticatedUser() user: ExampleUser | undefined,
     @AccessToken() accessToken: string | undefined,
   ) {
     return this.appService.getPrivate(user, accessToken);
@@ -32,28 +32,28 @@ export class AppController {
 
   @Get('me')
   @TokenScopes('openid', 'profile')
-  getCurrentUser(@KeycloakUser() user: ExampleUser | undefined) {
+  getCurrentUser(@AuthenticatedUser() user: ExampleUser | undefined) {
     return this.appService.getCurrentUser(user);
   }
 
   @Get('roles/any')
   @Roles('realm:basic', 'basic')
   @RoleMatchingMode(RoleMatch.ANY)
-  basicRoleAny(@KeycloakUser() user: ExampleUser | undefined) {
+  basicRoleAny(@AuthenticatedUser() user: ExampleUser | undefined) {
     return this.appService.basicRoleAny(user);
   }
 
   @Get('roles/all')
   @Roles('realm:basic', 'basic')
   @RoleMatchingMode(RoleMatch.ALL)
-  basicRoleAll(@KeycloakUser() user: ExampleUser | undefined) {
+  basicRoleAll(@AuthenticatedUser() user: ExampleUser | undefined) {
     return this.appService.basicRoleAll(user);
   }
 
   @Get('roles/admin')
   @Roles('realm:admin')
   @RoleMatchingMode(RoleMatch.ANY)
-  adminRole(@KeycloakUser() user: ExampleUser | undefined) {
+  adminRole(@AuthenticatedUser() user: ExampleUser | undefined) {
     return this.appService.adminRole(user);
   }
 
