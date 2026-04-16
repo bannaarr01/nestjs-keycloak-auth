@@ -7,7 +7,7 @@ This example is a bearer-only API demo that exercises the major features of `nes
 - `@TokenScopes` (OAuth scope checks from token `scope` claim)
 - `@Resource`, `@Scopes`, `@ConditionalScopes`, `@ResolvedScopes`
 - `@EnforcerOptions` with `decision`, `permissions`, and `token` response modes
-- `@KeycloakUser` and `@AccessToken`
+- `@AuthenticatedUser` and `@AccessToken`
 - OFFLINE validation + audience verification
 - Multi-tenant realm/client/secret/auth-server resolvers
 - Built-in admin callbacks: `POST /k_push_not_before` and `POST /k_logout`
