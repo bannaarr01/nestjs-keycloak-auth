@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.5](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.0.4...v1.0.5) (2026-04-16)
+
+
+### Features
+
+* add @AuthenticatedUser() decorator alias ([#34](https://github.com/bannaarr01/nestjs-keycloak-auth/issues/34)) ([47e9114](https://github.com/bannaarr01/nestjs-keycloak-auth/commit/47e9114fb8feffdcf18bb997e491af070660e73c))
+
 ## [1.0.4](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.0.3...v1.0.4) (2026-04-04)
 
 
