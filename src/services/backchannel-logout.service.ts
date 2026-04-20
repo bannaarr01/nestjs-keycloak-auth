@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { KEYCLOAK_AUTH_OPTIONS } from '../constants';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { KeycloakAuthConfig } from '../interface/keycloak-auth-options.interface';
 
 /**
  * In-memory store tracking revoked sessions and users from
@@ -10,11 +12,19 @@ import { Injectable, Logger } from '@nestjs/common';
 @Injectable()
 export class BackchannelLogoutService {
    private readonly logger = new Logger(BackchannelLogoutService.name);
+   private static readonly DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
    private readonly revokedSessions = new Map<string, number>(); // sid → revokedAt
    private readonly revokedUsers = new Map<string, number>(); // sub → revokedAt
 
-   private readonly ttlMs = 24 * 60 * 60 * 1000; // 24 hours
+   private readonly ttlMs: number;
+
+   constructor(
+    @Inject(KEYCLOAK_AUTH_OPTIONS)
+    private readonly keycloakOpts: KeycloakAuthConfig,
+   ) {
+      this.ttlMs = this.resolveTtlMs();
+   }
 
    /**
    * Mark a session and/or user as revoked.
@@ -92,5 +102,24 @@ export class BackchannelLogoutService {
             this.revokedUsers.delete(key);
          }
       }
+   }
+
+   /**
+    * Resolve the TTL for in-memory revocation entries.
+    * Uses `backchannelLogoutTtlMs` when configured with a valid positive number,
+    * otherwise falls back to the default 24-hour retention window.
+    */
+   private resolveTtlMs(): number {
+      const configuredTtl = this.keycloakOpts.backchannelLogoutTtlMs;
+
+      if (
+         typeof configuredTtl === 'number' &&
+         Number.isFinite(configuredTtl) &&
+         configuredTtl > 0
+      ) {
+         return configuredTtl;
+      }
+
+      return BackchannelLogoutService.DEFAULT_TTL_MS;
    }
 }

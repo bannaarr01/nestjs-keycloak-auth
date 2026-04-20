@@ -66,6 +66,12 @@ export interface NestKeycloakConfig {
    * Role merging options.
    */
   roleMerge?: RoleMerge;
+
+  /**
+   * TTL for in-memory back-channel logout revocation entries in milliseconds.
+   * Defaults to 24 hours.
+   */
+  backchannelLogoutTtlMs?: number;
 }
 
 /**
