@@ -1,14 +1,19 @@
 import { getPrivate } from '../helpers';
+import { KeycloakAuthConfig } from '../../src/interface/keycloak-auth-options.interface';
 import { BackchannelLogoutService } from '../../src/services/backchannel-logout.service';
 
 describe('BackchannelLogoutService', () => {
+   const buildService = (
+      overrides: Partial<KeycloakAuthConfig> = {},
+   ) => new BackchannelLogoutService(overrides as KeycloakAuthConfig);
+
    afterEach(() => {
       jest.restoreAllMocks();
    });
 
    it('revokes session and user and reports revoked state', () => {
       jest.spyOn(Date, 'now').mockReturnValue(1000);
-      const service = new BackchannelLogoutService();
+      const service = buildService();
 
       service.revoke('sid-1', 'sub-1');
 
@@ -18,7 +23,7 @@ describe('BackchannelLogoutService', () => {
    });
 
    it('supports revoking only sid or only sub', () => {
-      const service = new BackchannelLogoutService();
+      const service = buildService();
       service.revoke('sid-only');
       service.revoke(undefined, 'sub-only');
 
@@ -27,14 +32,14 @@ describe('BackchannelLogoutService', () => {
    });
 
    it('returns false for unknown/falsy sub values', () => {
-      const service = new BackchannelLogoutService();
+      const service = buildService();
 
       expect(service.isRevoked(undefined, 'missing-sub')).toBe(false);
       expect(service.isRevoked(undefined, '')).toBe(false);
    });
 
    it('cleans up old revoked entries based on ttl', () => {
-      const service = new BackchannelLogoutService();
+      const service = buildService();
       const revokedSessions = getPrivate<Map<string, number>>(service, 'revokedSessions');
       const revokedUsers = getPrivate<Map<string, number>>(service, 'revokedUsers');
       const ttlMs = getPrivate<number>(service, 'ttlMs');
@@ -54,7 +59,7 @@ describe('BackchannelLogoutService', () => {
    it('allows tokens issued after user revocation (new session)', () => {
       const revokeTime = 1_000_000;
       jest.spyOn(Date, 'now').mockReturnValue(revokeTime);
-      const service = new BackchannelLogoutService();
+      const service = buildService();
       service.revoke('old-sid', 'user-sub');
 
       // Token issued before revocation — should be revoked
@@ -70,7 +75,7 @@ describe('BackchannelLogoutService', () => {
    });
 
    it('removes stale sid/sub entries during isRevoked checks', () => {
-      const service = new BackchannelLogoutService();
+      const service = buildService();
       const revokedSessions = getPrivate<Map<string, number>>(service, 'revokedSessions');
       const revokedUsers = getPrivate<Map<string, number>>(service, 'revokedUsers');
       const ttlMs = getPrivate<number>(service, 'ttlMs');
@@ -83,5 +88,17 @@ describe('BackchannelLogoutService', () => {
       expect(service.isRevoked('stale-sid', 'stale-sub')).toBe(false);
       expect(revokedSessions.has('stale-sid')).toBe(false);
       expect(revokedUsers.has('stale-sub')).toBe(false);
+   });
+
+   it('uses configured backchannelLogoutTtlMs when provided', () => {
+      const service = buildService({ backchannelLogoutTtlMs: 5000 });
+
+      expect(getPrivate<number>(service, 'ttlMs')).toBe(5000);
+   });
+
+   it('falls back to the default ttl for invalid configured values', () => {
+      const service = buildService({ backchannelLogoutTtlMs: 0 });
+
+      expect(getPrivate<number>(service, 'ttlMs')).toBe(24 * 60 * 60 * 1000);
    });
 });
