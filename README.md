@@ -63,6 +63,7 @@ KeycloakAuthModule.register({
   bearerOnly: true,
   policyEnforcement: PolicyEnforcementMode.PERMISSIVE, // optional
   tokenValidation: TokenValidation.ONLINE, // optional
+  backchannelLogoutTtlMs: 24 * 60 * 60 * 1000, // optional, defaults to 24 hours
 });
 ```
 
@@ -98,6 +99,7 @@ export class KeycloakConfigService implements KeycloakAuthOptionsFactory {
       bearerOnly: true,
       policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
       tokenValidation: TokenValidation.ONLINE,
+      backchannelLogoutTtlMs: 24 * 60 * 60 * 1000,
     };
   }
 }
@@ -352,6 +354,7 @@ Current test setup uses Jest + ts-jest and is configured to enforce 100% global 
 | tokenValidation   | Sets the token validation method                                           | no       | ONLINE     |
 | multiTenant       | Sets options for [multi-tenant configuration](#multi-tenant-configuration) | no       | -          |
 | roleMerge         | Sets the merge mode for `@Roles` decorator                                | no       | OVERRIDE   |
+| backchannelLogoutTtlMs | TTL for in-memory back-channel logout revocation entries in milliseconds | no | 86400000 |
 
 ### Common Keycloak Config Fields
 
