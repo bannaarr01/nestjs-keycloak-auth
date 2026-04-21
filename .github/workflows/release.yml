@@ -15,6 +15,7 @@ jobs:
     name: Build, Publish & Release
     runs-on: ubuntu-latest
     permissions:
+      attestations: write
       contents: write
       id-token: write
     steps:
@@ -46,10 +47,12 @@ jobs:
       - run: shasum -a 256 *.tgz > SHA256SUMS.txt
         name: Generate checksums
 
-      - name: Delete existing GitHub Release
-        run: gh release delete "${{ github.ref_name }}" --yes || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate artifact attestations
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            *.tgz
+            SHA256SUMS.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
