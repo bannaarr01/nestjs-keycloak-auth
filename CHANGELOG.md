@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.1.0](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.0.5...v1.1.0) (2026-04-22)
+
+
+### Features
+
+* add configurable back-channel logout TTL ([#35](https://github.com/bannaarr01/nestjs-keycloak-auth/issues/35)) ([041b8ad](https://github.com/bannaarr01/nestjs-keycloak-auth/commit/041b8adfd83d0dbf3129d484d261ed426ab6e169))
+
 ## [1.0.5](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.0.4...v1.0.5) (2026-04-16)
 
 
