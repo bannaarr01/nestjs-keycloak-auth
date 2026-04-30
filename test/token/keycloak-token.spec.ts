@@ -132,6 +132,7 @@ describe('KeycloakToken', () => {
 
       expect(valid.isExpired()).toBe(false);
       expect(expired.isExpired()).toBe(true);
+      expect(expired.isExpired(2)).toBe(false);
       nowSpy.mockRestore();
    });
 });
