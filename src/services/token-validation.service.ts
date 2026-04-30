@@ -105,7 +105,7 @@ export class TokenValidationService {
          }
 
          // Check expiry
-         if (token.isExpired()) {
+         if (token.isExpired(this.getClockSkewSec())) {
             this.logger.verbose('invalid token (expired)');
             return false;
          }
@@ -215,5 +215,12 @@ export class TokenValidationService {
 
       // crypto.verify() auto-detects key type (RSA vs EC) from the KeyObject
       return crypto.verify(hash, Buffer.from(signed), keyObj, signature);
+   }
+
+   private getClockSkewSec(): number {
+      const clockSkewSec = this.keycloakOpts.clockSkewSec;
+      return typeof clockSkewSec === 'number' && Number.isFinite(clockSkewSec) && clockSkewSec > 0
+         ? clockSkewSec
+         : 0;
    }
 }

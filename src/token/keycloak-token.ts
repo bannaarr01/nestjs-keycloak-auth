@@ -114,8 +114,8 @@ export class KeycloakToken {
    * Check if the token is expired.
    * Matches keycloak-connect's behavior: exp=0 is considered expired.
    */
-   isExpired(): boolean {
-      return this.content.exp * 1000 < Date.now();
+   isExpired(clockSkewSec = 0): boolean {
+      return (this.content.exp + clockSkewSec) * 1000 < Date.now();
    }
 
    /**
