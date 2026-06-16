@@ -72,6 +72,12 @@ export interface NestKeycloakConfig {
    * Defaults to 24 hours.
    */
   backchannelLogoutTtlMs?: number;
+
+  /**
+   * Allowed clock skew for OFFLINE token expiration checks in seconds.
+   * Defaults to 0.
+   */
+  clockSkewSec?: number;
 }
 
 /**

@@ -89,6 +89,32 @@ describe('TokenValidationService', () => {
       await expect(service.validateOffline(jwt, realmUrl, 'client')).resolves.toBe(false);
    });
 
+   it('allows recently expired offline tokens within configured clock skew', async () => {
+      jest.spyOn(Date, 'now').mockReturnValue(10_000);
+      const keyObject = {} as crypto.KeyObject;
+      jest.spyOn(cryptoModule, 'createPublicKey').mockReturnValue(keyObject);
+      jest.spyOn(cryptoModule, 'verify').mockImplementation(() => true);
+
+      const { service } = buildService({
+         clockSkewSec: 5,
+         realmPublicKey: 'A'.repeat(10),
+      });
+      const jwt = makeJwt({ exp: 6, typ: 'Bearer', iat: 1, iss: realmUrl });
+
+      await expect(service.validateOffline(jwt, realmUrl, 'client')).resolves.toBe(true);
+   });
+
+   it('ignores invalid clock skew values for offline expiration checks', async () => {
+      jest.spyOn(Date, 'now').mockReturnValue(10_000);
+      const { service } = buildService({
+         clockSkewSec: -5,
+         realmPublicKey: 'A'.repeat(10),
+      });
+      const jwt = makeJwt({ exp: 6, typ: 'Bearer', iat: 1, iss: realmUrl });
+
+      await expect(service.validateOffline(jwt, realmUrl, 'client')).resolves.toBe(false);
+   });
+
    it('fails offline validation for wrong token type', async () => {
       const { service } = buildService();
       const jwt = makeJwt({ exp: 9999999999, typ: 'Refresh', iat: 1, iss: realmUrl });

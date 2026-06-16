@@ -64,6 +64,7 @@ KeycloakAuthModule.register({
   policyEnforcement: PolicyEnforcementMode.PERMISSIVE, // optional
   tokenValidation: TokenValidation.ONLINE, // optional
   backchannelLogoutTtlMs: 24 * 60 * 60 * 1000, // optional, defaults to 24 hours
+  clockSkewSec: 5, // optional, defaults to 0; used by OFFLINE expiration checks
 });
 ```
 
@@ -100,6 +101,7 @@ export class KeycloakConfigService implements KeycloakAuthOptionsFactory {
       policyEnforcement: PolicyEnforcementMode.PERMISSIVE,
       tokenValidation: TokenValidation.ONLINE,
       backchannelLogoutTtlMs: 24 * 60 * 60 * 1000,
+      clockSkewSec: 5,
     };
   }
 }
@@ -348,13 +350,14 @@ Current test setup uses Jest + ts-jest and is configured to enforce 100% global 
 
 ### Nest Keycloak Options
 
-| Option            | Description                                                                | Required | Default    |
-| ----------------- | -------------------------------------------------------------------------- | -------- | ---------- |
-| policyEnforcement | Sets the policy enforcement mode                                           | no       | PERMISSIVE |
-| tokenValidation   | Sets the token validation method                                           | no       | ONLINE     |
-| multiTenant       | Sets options for [multi-tenant configuration](#multi-tenant-configuration) | no       | -          |
-| roleMerge         | Sets the merge mode for `@Roles` decorator                                | no       | OVERRIDE   |
-| backchannelLogoutTtlMs | TTL for in-memory back-channel logout revocation entries in milliseconds | no | 86400000 |
+| Option                 | Description                                                              | Required | Default    |
+| ---------------------- | ------------------------------------------------------------------------ | -------- | ---------- |
+| policyEnforcement      | Sets the policy enforcement mode                                         | no       | PERMISSIVE |
+| tokenValidation        | Sets the token validation method                                         | no       | ONLINE     |
+| multiTenant            | Sets options for multi-tenant configuration                              | no       | -          |
+| roleMerge              | Sets the merge mode for `@Roles` decorator                               | no       | OVERRIDE   |
+| backchannelLogoutTtlMs | TTL for in-memory back-channel logout revocation entries in milliseconds | no       | 86400000   |
+| clockSkewSec           | Allowed clock skew for OFFLINE token expiration checks in seconds        | no       | 0          |
 
 ### Common Keycloak Config Fields
 
