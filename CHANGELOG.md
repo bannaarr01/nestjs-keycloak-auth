@@ -1,5 +1,7 @@
 # Changelog
 
+## [1.1.1](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.1.0...v1.1.1) (2026-06-16)
+
 # [1.1.0](https://github.com/bannaarr01/nestjs-keycloak-auth/compare/v1.0.5...v1.1.0) (2026-04-22)
 
 
