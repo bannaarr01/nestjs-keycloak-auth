@@ -48,11 +48,19 @@ jobs:
         name: Generate checksums
 
       - name: Generate artifact attestations
-        uses: actions/attest@v4
+        id: attest
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             *.tgz
             SHA256SUMS.txt
+
+      # OpenSSF Scorecard's Signed-Releases check scans release ASSET filenames
+      # for a recognised signature/provenance extension (it does not read the
+      # GitHub attestation store). Publish the SLSA provenance bundle as a
+      # *.intoto.jsonl release asset so the artifact is detected as signed.
+      - name: Stage provenance bundle as a release asset
+        run: cp "${{ steps.attest.outputs.bundle-path }}" "$(ls *.tgz).intoto.jsonl"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
@@ -61,6 +69,7 @@ jobs:
           files: |
             *.tgz
             SHA256SUMS.txt
+            *.intoto.jsonl
 
       - run: npm publish --provenance --access public
         name: Publish to npm

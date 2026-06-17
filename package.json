@@ -126,6 +126,8 @@
     "release-it": {
       "undici": "^7.0.0"
     },
-    "path-to-regexp": "^8.4.0"
+    "path-to-regexp": "^8.4.0",
+    "js-yaml": "^4.2.0",
+    "ws": "^8.21.0"
   }
 }
